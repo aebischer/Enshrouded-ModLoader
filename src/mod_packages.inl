@@ -1,4 +1,5 @@
 // Declarative contract + non-executing PE validation. Native plugins remain trusted code.
+#include "../sdk/include/enshrouded_i18n.h"
 struct SettingSpec {
     std::string key,label,defaultValue;
     bool boolean=false,percent=false;
@@ -25,7 +26,21 @@ struct Package {
     std::vector<SettingSpec> settings;
     std::filesystem::path path;
     std::map<std::string,std::string> dependencies;
+    std::map<std::string,std::map<std::string,std::string>> translations;
 };
+static const std::string& packageText(const Package& item,const std::string& key,const std::string& fallback,uint32_t language) {
+    const char* wanted=enshrouded::i18n::code(language);
+    for(unsigned depth=0;depth<4;++depth) {
+        const auto locale=item.translations.find(wanted);
+        if(locale!=item.translations.end()) {
+            const auto entry=locale->second.find(key);
+            if(entry!=locale->second.end()) return entry->second;
+        }
+        if(!strcmp(wanted,"en")) break;
+        wanted=enshrouded::i18n::parent(wanted);
+    }
+    return fallback;
+}
 static bool packageVersion(const std::string& s) {return !s.empty() && s.size()<=64 && s.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-")==std::string::npos;}
 static bool readPackage(const std::string& id,Package& item,std::string& error) {
     item=Package{}; item.id=id;
@@ -69,6 +84,13 @@ static bool readPackage(const std::string& id,Package& item,std::string& error) 
             } else return fail();
             item.settings.push_back(std::move(spec));
         }
+        else if(k=="text") {
+            const auto parts=splitSetting(v);
+            if(parts.size()!=3 || !enshrouded::i18n::validCode(parts[0].c_str()) ||
+               parts[1].empty() || parts[1].size()>100 || parts[1].find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789_.")!=std::string::npos ||
+               parts[2].empty() || parts[2].size()>100 || parts[2].find_first_of("\r\n\t=")!=std::string::npos || parts[2].find('\0')!=std::string::npos ||
+               !item.translations[parts[0]].emplace(parts[1],parts[2]).second) return fail();
+        }
         else if(k=="require" && item.dependencies.size()<64) {
             const auto at=v.find('@'); if(at==std::string::npos) return fail();
             const auto dep=modId(v.substr(0,at)),ver=v.substr(at+1);
@@ -76,6 +98,15 @@ static bool readPackage(const std::string& id,Package& item,std::string& error) 
         } else return fail();
     }
     if(!in.eof() || !header || !kind || !version || !abi || (!item.mod && !item.settings.empty())) {error="Manifeste invalide ou ABI incompatible : "+id; return false;}
+    for(const auto& locale:item.translations) for(const auto& entry:locale.second) {
+        bool known=false;
+        for(const auto& spec:item.settings) {
+            if(entry.first=="setting."+spec.key) known=true;
+            for(size_t i=0;i<spec.choices.size();++i)
+                if(entry.first=="choice."+spec.key+"."+std::to_string(i)) known=true;
+        }
+        if(!known) return fail();
+    }
     return true;
 }
 static std::string lowerAscii(std::string s) {for(auto& c:s) if(c>='A' && c<='Z') c+=('a'-'A'); return s;}

@@ -1,0 +1,102 @@
+MOD MULTILINGUE — guide pour les auteurs (chargeur 0.6.10+, ABI 1)
+
+1. Traduire les paramètres affichés par le chargeur
+
+Le fichier voisin de votre DLL, mon_mod.dll.mod, est du texte UTF-8.
+Déclarez les paramètres, puis leurs traductions. Exemple complet :
+
+ENSHROUDED_PACKAGE_V1
+kind=mod
+version=1.0.0
+abi=1
+setting=messages|bool|Messages|true
+setting=mode|choice|Mode|normal|slow|normal|fast
+setting=intensity|percent|Intensity|100|0|200|25
+text=en|setting.messages|Messages
+text=fr|setting.messages|Messages de test
+text=en|setting.mode|Mode
+text=fr|setting.mode|Mode de transport
+text=en|choice.mode.0|Slow
+text=en|choice.mode.1|Normal
+text=en|choice.mode.2|Fast
+text=fr|choice.mode.0|Lent
+text=fr|choice.mode.1|Normal
+text=fr|choice.mode.2|Rapide
+text=en|setting.intensity|Intensity
+text=fr|setting.intensity|Intensité
+
+setting.<clé> traduit le libellé du paramètre. choice.<clé>.<indice> traduit
+un choix, avec un indice commençant à zéro dans l'ordre de déclaration.
+Les boutons booléens Activé/Désactivé sont traduits par le chargeur ; ne pas
+déclarer choice pour un booléen. Les pourcentages gardent leur suffixe %.
+
+Le chargeur choisit automatiquement la langue du jeu dans son interface.
+EnshroudedModConfigure reçoit toujours mode=fast, même si le joueur voit
+« Rapide ». Ne traduisez jamais les clés ni les valeurs internes sauvegardées.
+Ne renommez pas non plus les valeurs d'un mod déjà publié pour les angliciser :
+l'exemple historique example_mod conserve ainsi Calme/Normal/Rapide en interne.
+
+Une traduction absente utilise la langue parente, puis en, puis le libellé
+déclaré (ou la valeur interne pour un choix). Exemples : fr-ca -> fr -> en ;
+es-mx -> es-419 -> es -> en ; pt-br -> pt -> en ; en-us/en-gb -> en.
+Un ID de langue inconnu utilise en. Prévoyez toujours les traductions anglaises.
+
+Contraintes : codes en minuscules reconnus par enshrouded_i18n.h ; clé de
+1 à 100 caractères [a-z0-9_.] ; valeur de 1 à 100 octets UTF-8, sans |, =,
+tabulation, retour ligne ni NUL. Les clés doivent désigner un paramètre ou
+choix existant. Les doublons langue/clé sont refusés. Limite du manifeste :
+16 Kio. Un caractère accentué peut occuper plusieurs octets.
+Langues proposées par le client pris en charge : en, de, fr, it, es, ru, pl,
+ja, ko, pt-br, th, tr, zh-cn, zh-tw, uk. Les autres codes natifs acceptés
+sont énumérés dans include/enshrouded_i18n.h.
+
+2. Traduire les objets et autres textes affichés dans le jeu
+
+Les lignes text du manifeste ne traduisent que l'interface des paramètres.
+Elles ne créent pas de ressources natives et ne remplacent pas les textes
+d'objets. Ne mettez pas text=fr|item.name|... dans le manifeste : refusé.
+
+Pour ces textes, utilisez un catalogue embarqué C++17. Le fichier
+example/localized_texts.h fournit un exemple compilé et vérifié par les tests
+SDK : exampleText("item.name", nativeLanguageId).
+
+enshrouded::i18n::find(catalog, key, nativeLanguageId) retourne un pointeur
+vers le texte du catalogue, ou nullptr si la clé manque dans toute la chaîne
+de repli. Avec un catalogue static/constexpr, ce texte reste valide pendant
+la vie de la DLL. Ne libérez pas le pointeur et ne retournez pas un c_str()
+d'une chaîne temporaire au moteur.
+
+IMPORTANT : l'ABI 1 n'expose ni GetLanguage ni un service d'enregistrement de
+textes. Le header ne détecte pas la langue. Le paramètre nativeLanguageId doit
+venir du service de langue réel du jeu via votre adaptateur natif, validé pour
+le client supporté. Ne passez pas un code de locale Windows ou Steam.
+L'exemple est un catalogue, pas un adaptateur moteur prêt à l'emploi.
+
+Votre adaptateur associe les identifiants stables des ressources du mod aux
+clés du catalogue, fournit le texte selon le contrat du moteur (UTF-8,
+longueur et durée de vie), et laisse passer les identifiants des autres mods
+et du jeu. Il doit tenir compte d'un changement de langue sans conserver
+définitivement le premier texte résolu. Les adresses natives dépendent de la
+version du jeu : aucun offset universel n'est fourni par le SDK.
+
+3. Compiler, distribuer, vérifier
+
+Compiler les sources UTF-8 avec /utf-8 (MSVC). Le header public C ABI reste
+include/enshrouded_mod.h ; include/enshrouded_i18n.h est une aide C++17 optionnelle.
+Livrer la DLL et son manifeste ensemble. Annoncer chargeur >= 0.6.10 dans les
+prérequis : les anciens chargeurs refusent les lignes text. Il n'existe pas
+de champ min_loader_version dans le manifeste V1. Ne pas en inventer un.
+
+Depuis la racine du dépôt du chargeur :
+  build.cmd
+  build-sdk.cmd
+  test-mod-i18n.cmd
+  build\validate_mod_package.exe CHEMIN_PAQUET auteur/mon_mod.dll
+CHEMIN_PAQUET contient le sous-dossier Mods, pas directement la DLL.
+Le validateur vérifie aussi les traductions sans exécuter votre DLL.
+
+En jeu : vérifier français et anglais, une traduction manquante, les choix
+et booléens, l'affichage des accents, et deux mondes ayant des configurations
+différentes. Changer de langue ne doit pas changer les valeurs sauvegardées.
+Vérifier séparément les textes d'objets, leur inventaire et leur recette :
+la validation du manifeste ne prouve pas le raccordement des ressources natives.

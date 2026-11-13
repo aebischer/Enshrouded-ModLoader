@@ -78,6 +78,15 @@ template<class T> static T readAt(const void* p,size_t offset) {
 template<class T> static void putAt(void* p,size_t offset,T value) {
     memcpy(static_cast<char*>(p)+offset,&value,sizeof value);
 }
+static uint32_t gameLanguage() {
+    if(!imageBase) return 1;
+    const auto context=readAt<uintptr_t>(reinterpret_cast<void*>(imageBase),0x283f4a8);
+    if(!context) return 1;
+    const auto services=readAt<uintptr_t>(reinterpret_cast<void*>(context),0xd0);
+    if(!services) return 1;
+    const auto pool=readAt<uintptr_t>(reinterpret_cast<void*>(services),0x33ce8);
+    return pool?readAt<uint32_t>(reinterpret_cast<void*>(pool),0xd8):1;
+}
 using WorldLookup=unsigned char*(__fastcall*)(uint16_t);
 using EditFrame=uintptr_t(__fastcall*)(void*,void*);
 using BrowserScreen=void(__fastcall*)(void*);
@@ -373,7 +382,7 @@ static DWORD initializeImpl() {
         throw std::runtime_error("Cannot pin loader");
     folder=exe; folder.resize(folder.find_last_of(L"\\/"));
     folder+=L"\\ModLoader"; CreateDirectoryW(folder.c_str(),nullptr);
-    log("ModLoader 0.6.9: validated packages and bounded world profiles; RandomWorld excluded");
+    log("ModLoader 0.6.10: validated packages and bounded world profiles; RandomWorld excluded");
     if(!matchingExe(exe)) throw std::runtime_error("Unsupported executable");
     imageBase=reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
     if(!unchangedHookTargets(exe)) throw std::runtime_error("Hook target modified in memory");

@@ -174,3 +174,38 @@ Le validateur appelle makeLoadPlan du chargeur, sans charger le code des DLL.
 Il ne constitue pas un second ensemble de règles différent du chargeur.
 Les deux mods internes Test_A et Test_B utilisent le même header public, les mêmes
 manifestes, le même préchargement et les mêmes règles de cycle de vie.
+
+LOCALISATION (extension du manifeste, chargeur 0.6.10 ou ultérieur)
+
+Les textes visibles doivent suivre la langue sélectionnée dans Enshrouded,
+et non celle de Windows. Les identifiants et valeurs sauvegardées restent stables.
+L'ABI 1 reste inchangée. Les anciens manifestes restent acceptés ; un ancien
+chargeur ne reconnaît pas les nouvelles lignes text et doit être mis à jour.
+
+Exemple pour un paramètre choice de clé mode, choix internes low et high :
+  text=en|setting.mode|Mode
+  text=fr|setting.mode|Mode de transport
+  text=en|choice.mode.0|Low
+  text=fr|choice.mode.0|Faible
+  text=fr|choice.mode.1|Élevé
+
+Encodage UTF-8. Une ligne par langue et clé ; doublons et clés inconnues refusés.
+Libellé : 1 à 100 octets UTF-8, sans séparateurs | ou = ni tabulation/retour ligne.
+Les limites globales du manifeste restent applicables (16 Kio).
+Le booléen utilise les libellés Activé/Désactivé traduits par le chargeur.
+Le pourcentage conserve sa valeur numérique et le suffixe %.
+Repli : langue exacte, parent régional, anglais, puis libellé du paramètre.
+Exemples : fr-ca -> fr -> en ; es-mx -> es-419 -> es -> en.
+
+include/enshrouded_i18n.h (C++17, facultatif) expose la correspondance des IDs
+natifs du client pris en charge et la recherche dans un catalogue embarqué.
+Il ne lit pas la mémoire du jeu et n'ajoute pas d'API native à l'ABI.
+Le mod doit raccorder ses noms/descriptions d'objets au service de texte du jeu
+avec son adaptateur validé pour la version du client. Le manifeste traduit
+uniquement les paramètres du mod, pas arbitrairement toutes les ressources.
+Langues actuellement proposées par le jeu : en, de, fr, it, es, ru, pl, ja,
+ko, pt-br, th, tr, zh-cn, zh-tw, uk. Les autres codes natifs sont dans le header.
+Les traductions sont du texte de présentation, jamais des valeurs de sauvegarde.
+Guide pratique complet : LOCALISATION.txt. Exemples exécutables dans
+example/example_mod.dll.mod et example/localized_texts.h ; build-sdk.cmd
+vérifie les traductions ainsi que la stabilité des valeurs sauvegardées.

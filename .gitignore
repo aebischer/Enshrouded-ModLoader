@@ -85,3 +85,11 @@
 /third_party/minhook/build/
 /sdk/example/package/
 /CarryOn/
+
+!/sdk/include/enshrouded_i18n.h
+!/src/localized_settings.h
+!/tests/mod_i18n_test.cpp
+!/test-mod-i18n.cmd
+
+!/sdk/LOCALISATION.txt
+!/sdk/example/localized_texts.h

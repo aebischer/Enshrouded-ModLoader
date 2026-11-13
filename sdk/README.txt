@@ -19,3 +19,11 @@ Validation depuis la racine du projet :
 
 Le SDK n'offre pas encore de fonctions de manipulation des coffres ni de réseau.
 Il standardise l'intégration au chargeur, pas les mécaniques natives du jeu.
+
+Localisation facultative C++17 : include/enshrouded_i18n.h. Voir la section
+LOCALISATION du standard ; les lignes text nécessitent le chargeur 0.6.10.
+
+GUIDE MULTILINGUE : LOCALISATION.txt contient un manifeste complet, les règles
+de repli et la marche à suivre pour les textes d'objets. Le modèle example
+est maintenant bilingue français/anglais (chargeur 0.6.10 minimum).
+Catalogue C++17 testé : example/localized_texts.h.

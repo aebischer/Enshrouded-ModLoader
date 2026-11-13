@@ -1,6 +1,12 @@
 #include "../src/loader.cpp"
 #include <cassert>
+#include "../sdk/example/localized_texts.h"
 int main() {
+    assert(!strcmp(exampleText("item.name",5),"Outil de démonstration"));
+    assert(!strcmp(exampleText("item.name",22),"Outil de démonstration"));
+    assert(!strcmp(exampleText("item.name",3),"Example tool"));
+    assert(!strcmp(exampleText("item.name",999),"Example tool"));
+    assert(exampleText("missing",5)==nullptr);
     const auto source=std::filesystem::current_path()/L"sdk-package"/L"Mods"/L"example";
     const auto root=std::filesystem::current_path()/("sdk-test-"+std::to_string(GetCurrentProcessId()));
     const auto dest=root/L"Mods"/L"example";
@@ -10,6 +16,10 @@ int main() {
     const std::string id="example/example_mod.dll",world(32,'a'); std::string error;
     {LoadPlan plan; assert(makeLoadPlan({id},plan,error)); assert(!GetModuleHandleW(L"example_mod.dll"));}
     Package package; assert(readPackage(id,package,error));
+    const std::string fallback="fallback";
+    assert(packageText(package,"choice.mode.2",fallback,1)=="Fast");
+    assert(packageText(package,"choice.mode.2",fallback,5)=="Rapide");
+    assert(package.settings[1].choices[2]=="Rapide");
     auto initial=defaultSettings(package),custom=initial; custom["mode"]="Rapide";custom["messages"]="false";custom["intensity"]="125";
     assert(saveModSettings(world,package,custom,initial,error));
     assert(saveProfile(world,{id},error) && prepareWorldMods(world,error));

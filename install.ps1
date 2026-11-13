@@ -1,4 +1,4 @@
-﻿param([string]$GamePath, [switch]$Uninstall)
+param([string]$GamePath, [switch]$Uninstall)
 $ErrorActionPreference = 'Stop'
 $expected = '5D9EF2F140B8ED49E30DBEE655841B89D08BAEC20F799A1817E171A18A850C77'
 if (-not $GamePath) {
@@ -161,5 +161,5 @@ try {
         if (Test-Path -LiteralPath $tempFile -PathType Leaf) { Remove-Item -LiteralPath $tempFile -ErrorAction SilentlyContinue }
     }
 }
-Write-Host "Chargeur 0.6.9 installe et verifie dans $GamePath."
+Write-Host "Chargeur 0.6.10 installe et verifie dans $GamePath."
 } finally { $installLock.Dispose() }

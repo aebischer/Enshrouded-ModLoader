@@ -1,4 +1,4 @@
-# Enshrouded ModLoader 0.6.9
+# Enshrouded ModLoader 0.6.10
 
 Chargeur natif Windows x64 pour Enshrouded, avec une interface MODS intégrée
 au menu Modifier de chaque monde. Activation et paramètres sont enregistrés
@@ -64,6 +64,8 @@ et un pourcentage. Ils ne produisent aucun effet de gameplay.
 
 Commencer par le [guide du SDK](sdk/README.txt) et le
 [standard V1 / ABI 1](sdk/STANDARD_V1.txt), qui constitue le contrat commun.
+Le [guide multilingue](sdk/LOCALISATION.txt) explique les paramètres traduits
+et les catalogues de textes en jeu, avec des exemples français/anglais.
 
 Chaque mod fournit une DLL Windows x64, un manifeste voisin `.dll.mod` et
 les fonctions d'intégration du SDK. Un exemple compilable et un validateur

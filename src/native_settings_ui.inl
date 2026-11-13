@@ -1,3 +1,4 @@
+#include "localized_settings.h"
 // Exact client SHA-256 pinned in loader.cpp. Facts checked against:
 // ADE4C0 option row, B93D49 scrolling difficulty tab, B9323C scrollbar look.
 // The native option row owns label/value layout, arrows, highlight, sounds and input.
@@ -68,6 +69,7 @@ struct NativeSettingsScroll {
 };
 static void renderNativeModSettings(const std::string& id) {
     auto& view=settingsViews.at(id);
+    const auto language=gameLanguage();
     if(view.package.settings.empty()) {pageLabel("Aucun param\xc3\xa8tre configurable pour ce mod."); return;}
     if(!view.error.empty()) {pageLabel(view.error.c_str()); pageLabel("Actualise pour relire les param\xc3\xa8tres."); return;}
     // The native scroll borrows this plain 0x18-byte state; it stays alive between frames.
@@ -80,11 +82,12 @@ static void renderNativeModSettings(const std::string& id) {
         NativeSettingsScroll scroll(scrollState);
         NativeFrame content("SettingsRows",false,0); content.stretch(1,0);
         for(const auto& spec:view.package.settings) {
+            const auto& translatedLabel=packageText(view.package,"setting."+spec.key,spec.label,language);
             const auto rowId="Setting_"+spec.key;
             NativeFrame row(rowId.c_str()); row.stretch(1,0);
             if(spec.percent) {
                 alignas(16) unsigned char slider[NativeSliderBytes]{};
-                const auto label=text(spec.label.c_str());
+                const auto label=text(translatedLabel.c_str());
                 ui<void*(__fastcall*)(void*,const Text*)>(0xb23c10)(slider,&label);
                 configureNativePercent(slider,spec);
                 float value=std::stoi(view.values.at(spec.key))/100.0f;
@@ -99,13 +102,14 @@ static void renderNativeModSettings(const std::string& id) {
                 continue;
             }
             std::vector<Text> labels;
-            if(spec.boolean) labels={text("D\xc3\xa9sactiv\xc3\xa9"),text("Activ\xc3\xa9")};
-            else for(const auto& choice:spec.choices) labels.push_back(text(choice.c_str()));
+            if(spec.boolean) labels={text(localizedBoolean(false,language)),text(localizedBoolean(true,language))};
+            else for(size_t i=0;i<spec.choices.size();++i)
+                labels.push_back(text(packageText(view.package,"choice."+spec.key+"."+std::to_string(i),spec.choices[i],language).c_str()));
             const auto current=view.values.at(spec.key);
             unsigned char selected=spec.boolean?static_cast<unsigned char>(current=="true"):
                 static_cast<unsigned char>(std::find(spec.choices.begin(),spec.choices.end(),current)-spec.choices.begin());
             alignas(16) unsigned char config[NativeOptionBytes]{};
-            if(selected>=labels.size() || !buildNativeOption(config,text(spec.label.c_str()),labels,true)) continue;
+            if(selected>=labels.size() || !buildNativeOption(config,text(translatedLabel.c_str()),labels,true)) continue;
             if(ui<unsigned char(__fastcall*)(void*,unsigned char*)>(0xade4c0)(config,&selected) && selected<labels.size()) {
                 changeSetting(id,spec.key,spec.boolean?(selected?"true":"false"):spec.choices[selected]);
             }
