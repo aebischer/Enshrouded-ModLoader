@@ -1,0 +1,176 @@
+STANDARD DES MODS — Enshrouded ModLoader — version 1
+Statut : contrat du projet, ABI 1 existante, documenté le 13 novembre 2026.
+Ce document est la référence normative commune aux mods internes et externes.
+Ce n'est pas un standard officiel de Keen Games ni une API officielle du jeu.
+
+1. Un même contrat pour tous
+
+Tout mod compatible suit les mêmes règles, passe la même validation et utilise
+le même SDK. Aucun privilège ni format spécial pour Test_A, Test_B ou CarryOn.
+Le chargeur ne convertit pas automatiquement les DLL d'autres frameworks.
+Un développeur externe doit adapter son mod à ce contrat et vérifier les
+versions du jeu/chargeur avec lesquelles son code fonctionne.
+
+Deux versions distinctes :
+- ENSHROUDED_PACKAGE_V1 : syntaxe du manifeste.
+- abi=1 : interface binaire des fonctions et du contexte.
+Le numéro version=... est celui du mod, indépendant des deux précédents.
+Le chargeur actuel est 0.6.9 ; ses offsets sont limités à l'exécutable identifié
+par SHA-256 dans src/loader.cpp. Un manifeste accepté ne garantit pas qu'un mod
+utilisant ses propres offsets soit compatible avec cet exécutable.
+
+2. Paquet distribué et identité
+
+Arborescence recommandée du paquet, à extraire dans le dossier du jeu :
+
+Mods/
+  auteur/
+    auteur_monmod.dll
+    auteur_monmod.dll.mod
+
+Obligatoires : une DLL Windows x64 et le manifeste voisin portant exactement
+le nom de la DLL suivi de .mod. Un dossier unique par auteur/projet est conseillé.
+Le nom de base des DLL du graphe doit lui aussi être unique, même entre dossiers.
+Le paquet d'un mod ne distribue pas son propre dinput8.dll : celui-ci appartient
+au chargeur. Sources, README et licence peuvent être livrés en complément.
+
+L'identifiant est le chemin de DLL relatif à Mods, normalisé par le chargeur en
+minuscules avec /. Exemple : auteur/auteur_monmod.dll.
+Garder cet identifiant stable : le renommer change l'identité dans les profils
+et les paramètres. Déplacer ou renommer un mod demande une migration explicite.
+Pas de chemin absolu, de remontée .., de flux NTFS, ni de sortie du dossier Mods.
+Les alias physiques et les noms de DLL ambigus sont refusés au préchargement.
+
+3. Manifeste commun (UTF-8, BOM facultatif, LF ou CRLF)
+
+ENSHROUDED_PACKAGE_V1
+kind=mod
+version=1.0.0
+abi=1
+setting=messages|bool|Messages|true
+setting=mode|choice|Mode|Normal|Calme|Normal|Rapide
+setting=intensity|percent|Intensité|100|0|200|25
+
+kind, version et abi sont obligatoires et uniques. Aucune clé inconnue n'est
+acceptée : ne pas ajouter author, id, side ou network dans ce format V1.
+version utilise 1 à 64 caractères ASCII parmi lettres, chiffres, point, tiret et
+underscore. Recommandation de publication : MAJEUR.MINEUR.CORRECTIF. Le chargeur
+compare les versions de dépendances comme des chaînes exactes, pas des plages.
+
+Dépendance facultative, répétable pour des identifiants différents :
+require=auteur/auteur_support.dll@1.0.0
+Le chemin est relatif à Mods, pas au dossier de la DLL qui le déclare.
+Un mod requis doit être activé explicitement. Une bibliothèque de support utilise
+kind=library et est chargée automatiquement ; elle ne déclare ni paramètres ni
+export EnshroudedModInitialize. Elle possède également son propre manifeste.
+Tous les imports non système doivent être déclarés. Les imports ordinaires et
+différés, versions exactes et cycles sont vérifiés avant la première exécution.
+Limites : 16 Kio par manifeste, 64 dépendances directes, profondeur 64 et 1024
+modules au total. Les clés inconnues, doublons et ABI non supportées sont refusés.
+
+4. Fonctions d'intégration — sdk/include/enshrouded_mod.h
+
+Obligatoire pour kind=mod :
+ENSHROUDED_MOD_EXPORT int ENSHROUDED_MOD_CALL EnshroudedModInitialize(
+    const EnshroudedModContext* context);
+
+Obligatoire si le manifeste déclare des paramètres :
+ENSHROUDED_MOD_EXPORT int ENSHROUDED_MOD_CALL EnshroudedModConfigure(
+    const char* world_id, const char* settings_utf8);
+
+Configure est facultative pour les anciens mods sans paramètres et n'est pas
+appelée dans ce cas. Le modèle fourni contient les deux fonctions. Ne pas
+inventer d'autres fonctions obligatoires ni supposer que des exports personnels
+seront automatiquement appelés par le chargeur.
+
+Retour : 1 = succès, 0 = échec. Tout autre résultat est traité comme un refus.
+Liaison C, convention __cdecl, architecture x64 ; ne pas modifier le packing.
+Contexte ABI 1 de 24 octets : size, abi_version, world_id, write_log.
+Vérifier les pointeurs, size >= sizeof(EnshroudedModContext) et abi_version == 1.
+Le world_id est le GUID du monde, 32 caractères hexadécimaux minuscules.
+Configure reçoit toutes les valeurs effectives, défauts compris, sous forme de
+lignes UTF-8 clé=valeur triées par clé et séparées par LF.
+Ses pointeurs sont empruntés seulement pour la durée de cet appel : copier ce
+qui doit être conservé. Le contexte d'Initialize et son world_id restent valides
+jusqu'à la fermeture du processus. Ne jamais libérer ou modifier la mémoire du
+chargeur. Aucune allocation C++ ne doit être échangée entre modules.
+Le logger reçoit un texte UTF-8 terminé par zéro, tronqué à 4096 octets.
+Ne pas laisser sortir d'exception C++ de ces fonctions.
+
+5. Ordre et durée de vie
+
+La page MODS lit le manifeste ; elle n'exécute pas la DLL pour dessiner ses options.
+Au lancement : validation complète du graphe, lecture des paramètres du monde,
+puis chargement dans l'ordre des dépendances. Pour chaque mod avec paramètres :
+Configure puis Initialize. Sans paramètres : Initialize seulement.
+Les exports sont appelés hors DllMain ; DllMain peut toutefois s'exécuter lors de
+LoadLibrary. Ne pas y initialiser le gameplay, installer des hooks ni créer des
+threads. Le modèle n'ajoute aucun DllMain.
+L'initialisation est unique par processus. Aucun arrêt, déchargement à chaud ou
+callback d'ouverture/fermeture de monde n'existe dans ABI 1.
+Une DLL partiellement initialisée peut rester résidente : un refus exige alors
+un redémarrage. Les mods doivent respecter ce cycle et gérer leurs ressources
+sans supposer qu'Initialize est rappelée à chaque retour dans le même monde.
+
+6. Paramètres communs et stockage
+
+Le chargeur gère l'interface native, les défauts, la validation et la persistance
+par monde ; le mod consomme les valeurs reçues. Ne pas dupliquer les paramètres
+de gameplay dans un autre fichier concurrent appartenant au mod.
+Types V1 :
+- bool : clé|bool|libellé|true ou false.
+- choice : clé|choice|libellé|défaut|choix1|choix2[...], 2 à 8 choix distincts.
+- percent : clé|percent|libellé|défaut|min|max|pas ; valeurs entières de 0 à 10000,
+  min < max, pas positif, défaut sur la grille et 32 positions maximum.
+Maximum 16 paramètres. Clé de 1 à 40 caractères [a-z0-9_]. Champs de 100 octets
+maximum. Pas de =, tabulation, retour à la ligne, zéro ou séparateur | dans les
+valeurs/libellés. Le défaut doit appartenir aux valeurs autorisées.
+Le booléen est affiché avec le contrôle natif Activé/Désactivé ; les choix et les
+pourcentages utilisent également les composants natifs de difficulté.
+
+Le stockage appartient au chargeur : ModLoader/worlds/<GUID>.mods et, depuis
+0.6.9, <GUID>.settings-v2/<SHA256(id normalisé UTF-8)>.ini.
+Les réglages sont conservés quand un mod est désactivé. Fichier absent = défauts,
+fichier invalide = erreur, pas un remplacement silencieux par les défauts.
+Les mods ne doivent pas dépendre directement du nom physique de ces fichiers.
+Changer un schéma peut rendre les anciens réglages invalides. V1 ne fournit pas
+de callback de migration de schéma : conserver les clés/valeurs compatibles ou
+prévoir et documenter la migration avant diffusion d'une mise à jour.
+
+7. Évolution, serveur et confiance
+
+ABI 1 reste figée : pas de changement silencieux de disposition du contexte,
+de signature ou d'ordre des appels. Un futur changement incompatible nécessitera
+une ABI explicite et un chargeur qui la supporte. Changer seulement version=...
+ne rend pas une ABI incompatible acceptable.
+
+Le multijoueur et le serveur dédié ne sont pas certifiés par ce standard V1.
+Il n'existe encore ni API réseau, ni échange de versions à la connexion, ni champ
+side client/server/both. Ces capacités demanderont une extension versionnée,
+avec serveur faisant autorité et paramètres détenus par le monde du serveur.
+Voir docs/server-multiplayer-decisions.txt pour les décisions CarryOn.
+Ne pas annoncer un support serveur sur la seule base de la validation du paquet.
+
+Une DLL est du code natif de confiance, pas du code isolé. Le préchargement détecte
+des erreurs de format et de dépendances ; il ne certifie ni la sécurité du mod,
+ni son comportement, ni son absence de conflit avec les hooks d'autres mods.
+
+8. Procédure commune de publication
+
+1) Utiliser le header public et partir du modèle sdk/example.
+2) Compiler Windows x64 ; le modèle utilise le CRT statique /MT pour limiter
+   les dépendances externes. Ne pas copier des runtimes au hasard avec le mod.
+3) Livrer DLL, manifeste et dépendances déclarées dans l'arborescence Mods.
+4) Exécuter le validateur commun sans démarrer le jeu :
+   build/validate_mod_package.exe <racine-du-paquet-contenant- Mods> auteur/auteur_monmod.dll
+   Ajouter les identifiants des autres mods requis/activés en arguments.
+   Les bibliothèques sont résolues automatiquement. Code retour 0 = conforme
+   aux contrôles statiques, 1 = refus, 2 = arguments invalides.
+5) Tester ensuite dans une partie de test : configuration de deux mondes,
+   valeurs limites, refus explicite et redémarrage. Documenter les versions
+   réellement testées du jeu et du chargeur, ainsi que les éventuelles limites.
+
+Le validateur appelle makeLoadPlan du chargeur, sans charger le code des DLL.
+Il ne constitue pas un second ensemble de règles différent du chargeur.
+Les deux mods internes Test_A et Test_B utilisent le même header public, les mêmes
+manifestes, le même préchargement et les mêmes règles de cycle de vie.

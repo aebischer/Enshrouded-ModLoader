@@ -1,0 +1,8 @@
+ENSHROUDED_PACKAGE_V1
+kind=mod
+version=1.2
+abi=1
+setting=messages|bool|Messages de test|true
+setting=effects|bool|Effets de test|false
+setting=mode|choice|Mode de test|Normal|Calme|Normal|Rapide
+setting=intensity|percent|Intensité de test|100|0|200|25

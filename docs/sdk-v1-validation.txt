@@ -1,0 +1,30 @@
+Validation du standard et SDK V1 — 13 novembre 2026
+
+Référence normative : sdk/STANDARD_V1.txt.
+Header public unique : sdk/include/enshrouded_mod.h.
+src/mod_api.h est un include de compatibilité vers ce header : pas de seconde ABI.
+Les mods internes Test_A et Test_B utilisent les macros publiques du SDK.
+
+Réussites :
+- build-sdk.cmd : compilation C et C++, exemple x64, validation statique sans
+  exécution puis chargement réel de l'exemple avec valeurs propres au monde.
+- Le mod d'exemple reçoit messages=false, mode=Rapide et intensity=125.
+- Son initialisation reste unique et la même session peut être réutilisée.
+- build-test-mods.cmd : les deux mods internes compilent et chargent avec le SDK.
+- test-mod-settings.cmd : types, isolation par monde et par mod, conflits,
+  persistance et redémarrage testés avec des DLL réelles.
+- tools/analyze-loader.cmd : compilation /W4 /analyze du chargeur utilisant le
+  header public, sans avertissement signalé.
+- Le validateur refuse un manifeste abi=999 (code 1) et les arguments absents
+  (code 2).
+- Validation statique des deux mods déjà installés : réussie, ABI 1 compatible.
+
+Le validateur réutilise directement makeLoadPlan du chargeur. Il n'exécute aucune
+DLL du paquet, ne certifie pas le gameplay et ne fournit pas de sandbox.
+Le standard préserve le contrat ABI 1 existant. Configure reste obligatoire pour
+les mods à paramètres et facultative pour les anciens mods sans paramètres.
+Le multijoueur/serveur est explicitement une extension future, pas une capacité V1.
+
+La DLL du chargeur installée n'a pas été remplacée : son hash et celui de dist
+restent C72EB61B7FE86B0B7A61ADFBCF25923341A89CAB3104D30F7E18103486AB0F1B.
+Les sorties SDK sont sous build ; aucun mod d'exemple n'a été installé dans le jeu.

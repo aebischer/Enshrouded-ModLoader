@@ -1,0 +1,8 @@
+ENSHROUDED_PACKAGE_V1
+kind=mod
+version=1.2
+abi=1
+setting=messages|bool|Messages de test|false
+setting=effects|bool|Effets de test|true
+setting=mode|choice|Couleur de test|Bleu|Bleu|Vert|Rouge
+setting=intensity|percent|Intensité de test|100|0|200|25
