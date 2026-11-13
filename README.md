@@ -4,8 +4,8 @@ Chargeur natif Windows x64 pour Enshrouded, avec une interface MODS intégrée
 au menu Modifier de chaque monde. Activation et paramètres sont enregistrés
 séparément pour chaque monde.
 
-Ce projet indépendant n'est pas un SDK officiel de Keen Games. RandomWorld
-et CarryOn ne sont pas inclus. Le fonctionnement sur serveur dédié reste
+Ce projet indépendant n'est pas un SDK officiel de Keen Games.
+Le fonctionnement sur serveur dédié reste
 à développer : voir les [décisions multijoueur](docs/server-multiplayer-decisions.txt).
 
 ## Compiler
