@@ -4,7 +4,7 @@ int main() {
     const auto root=std::filesystem::current_path()/("profile-reset-test-"+std::to_string(GetCurrentProcessId()));
     folder=(root/L"ModLoader").wstring();
     std::filesystem::create_directories(root/L"Mods");
-    const auto source=std::filesystem::current_path().parent_path()/L"dist"/L"test-mods";
+    const auto source=std::filesystem::current_path()/L"test-mods";
     for(const auto* name:{L"Test_A.dll",L"Test_A.dll.mod"}) std::filesystem::copy_file(source/name,root/L"Mods"/name);
     const std::string newWorld(32,'a'),oldWorld(32,'b');
     std::string error; std::set<std::string> entries;

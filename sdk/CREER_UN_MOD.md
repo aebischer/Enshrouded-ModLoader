@@ -42,6 +42,8 @@ et les objets nécessaires au validateur. `build-sdk.cmd` construit et teste :
 
 Le test C vérifie aussi que le header ABI est utilisable en C. Le helper de
 traduction et l’exemple utilisent C++17. Aucun de ces scripts SDK n’installe de mod.
+Le paquet du chargeur ne contient pas Test_A et Test_B : ces fixtures sont
+réservées aux tests de développement sous `build/test-mods`.
 
 ## 2. Partir de l’exemple compilable
 

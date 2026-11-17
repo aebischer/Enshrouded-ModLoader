@@ -86,7 +86,7 @@ int wmain(int argc,wchar_t** argv) {
         return 0;
     }
     std::filesystem::create_directories(root/L"Mods");
-    const auto source=std::filesystem::current_path().parent_path()/L"dist"/L"test-mods";
+    const auto source=std::filesystem::current_path()/L"test-mods";
     for(const auto* name:{L"Test_A.dll",L"Test_A.dll.mod",L"Test_B.dll",L"Test_B.dll.mod"}) std::filesystem::copy_file(source/name,root/L"Mods"/name);
     Package pa,pb; assert(readPackage("test_a.dll",pa,error) && readPackage("test_b.dll",pb,error));
     assert(pa.settings.size()==4 && pb.settings.size()==4);

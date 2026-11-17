@@ -18,8 +18,7 @@ MinHook est inclus sous sa [licence d'origine](third_party/minhook/LICENSE.txt).
 Depuis la racine du dépôt, exécuter dans cet ordre :
 
 1. `build.cmd` : produit `dist/dinput8.dll`.
-2. `build-test-mods.cmd` : construit et teste les deux mods de démonstration.
-3. `build-sdk.cmd` : construit l'exemple, le validateur et les tests du SDK.
+2. `build-sdk.cmd` : construit l'exemple, le validateur et les tests du SDK.
 
 Les sources et les scripts sont versionnés. Les binaires compilés, fichiers du
 jeu, sauvegardes, journaux et configurations personnelles sont exclus.
@@ -57,8 +56,8 @@ de déchargement à chaud ni de redémarrage automatique.
   synchronise pas ces profils automatiquement. L'outil de transfert des
   profils `.mods` ne transporte pas encore les paramètres.
 
-Les mods Test_A et Test_B 1.2 proposent des options oui/non, plusieurs choix
-et un pourcentage. Ils ne produisent aucun effet de gameplay.
+Le chargeur est distribué sans mod de test. Les DLL de test ne doivent pas
+être copiées dans le dossier `Mods` du jeu.
 
 ## Créer un mod
 
@@ -79,6 +78,9 @@ une sandbox.
 
 Après compilation, les scripts suivants couvrent les principaux contrôles :
 
+- `build-test-mods.cmd` : construit les fixtures Test_A et Test_B uniquement
+  dans `build/test-mods`, puis vérifie leur chargement en environnement isolé.
+  Exécuter ce script avant les tests de paramètres et de nouveaux mondes.
 - `test-mod-catalog.cmd`, `test-mod-profiles.cmd`, `test-mod-settings.cmd`.
 - `test-new-world-profiles.cmd`, `test-mod-hardening.cmd`.
 - `tools/audit-mod-067.cmd`, `tools/audit-mod-068.cmd`.

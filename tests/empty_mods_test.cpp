@@ -4,7 +4,7 @@ int main() {
     const auto root=std::filesystem::current_path()/("empty-mods-test-"+std::to_string(GetCurrentProcessId()));
     std::filesystem::create_directories(root/L"Mods");
     folder=(root/L"ModLoader").wstring();
-    const auto source=std::filesystem::current_path().parent_path()/L"dist"/L"test-mods";
+    const auto source=std::filesystem::current_path()/L"test-mods";
     for(const auto* name:{L"Test_A.dll",L"Test_B.dll",L"Test_A.dll.mod",L"Test_B.dll.mod"})
         std::filesystem::copy_file(source/name,root/L"Mods"/name);
     const std::string world(32,'a'),other(32,'b');
