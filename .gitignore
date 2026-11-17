@@ -28,6 +28,7 @@
 !/src/test_mods/test_a.manifest
 !/src/test_mods/test_b.manifest
 !/sdk/README.txt
+!/sdk/CREER_UN_MOD.md
 !/sdk/STANDARD_V1.txt
 !/sdk/example/build.cmd
 !/sdk/example/example_mod.cpp

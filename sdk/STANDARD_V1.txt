@@ -15,7 +15,7 @@ Deux versions distinctes :
 - ENSHROUDED_PACKAGE_V1 : syntaxe du manifeste.
 - abi=1 : interface binaire des fonctions et du contexte.
 Le numéro version=... est celui du mod, indépendant des deux précédents.
-Le chargeur actuel est 0.6.9 ; ses offsets sont limités à l'exécutable identifié
+Le chargeur actuel est 0.6.10 ; ses offsets sont limités à l'exécutable identifié
 par SHA-256 dans src/loader.cpp. Un manifeste accepté ne garantit pas qu'un mod
 utilisant ses propres offsets soit compatible avec cet exécutable.
 

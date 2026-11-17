@@ -1,6 +1,8 @@
 SDK Enshrouded ModLoader — ABI 1
 
 Référence : STANDARD_V1.txt.
+Tutoriel de bout en bout : CREER_UN_MOD.md (dossiers, formats, compilation,
+installation, ressources, diagnostic et liste de vérification de publication).
 Header public unique : include/enshrouded_mod.h (C et C++ Windows x64).
 Mod minimal : example/example_mod.cpp + example_mod.dll.mod.
 

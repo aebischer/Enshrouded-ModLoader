@@ -62,7 +62,7 @@ et un pourcentage. Ils ne produisent aucun effet de gameplay.
 
 ## Créer un mod
 
-Commencer par le [guide du SDK](sdk/README.txt) et le
+Commencer par le [tutoriel complet : créer, compiler et installer un mod](sdk/CREER_UN_MOD.md), le [guide du SDK](sdk/README.txt) et le
 [standard V1 / ABI 1](sdk/STANDARD_V1.txt), qui constitue le contrat commun.
 Le [guide multilingue](sdk/LOCALISATION.txt) explique les paramètres traduits
 et les catalogues de textes en jeu, avec des exemples français/anglais.
