@@ -1,30 +1,28 @@
-Validation du standard et SDK V1 — 13 novembre 2026
+SDK V1 VALIDATION — historical record, November 13, 2026
 
-Référence normative : sdk/STANDARD_V1.txt.
-Header public unique : sdk/include/enshrouded_mod.h.
-src/mod_api.h est un include de compatibilité vers ce header : pas de seconde ABI.
-Les mods internes Test_A et Test_B utilisent les macros publiques du SDK.
+Normative reference: sdk/STANDARD_V1.txt.
+Single public header: sdk/include/enshrouded_mod.h. src/mod_api.h includes it
+for compatibility and does not define another ABI. Internal fixtures use the
+public export macros.
 
-Réussites :
-- build-sdk.cmd : compilation C et C++, exemple x64, validation statique sans
-  exécution puis chargement réel de l'exemple avec valeurs propres au monde.
-- Le mod d'exemple reçoit messages=false, mode=Rapide et intensity=125.
-- Son initialisation reste unique et la même session peut être réutilisée.
-- build-test-mods.cmd : les deux mods internes compilent et chargent avec le SDK.
-- test-mod-settings.cmd : types, isolation par monde et par mod, conflits,
-  persistance et redémarrage testés avec des DLL réelles.
-- tools/analyze-loader.cmd : compilation /W4 /analyze du chargeur utilisant le
-  header public, sans avertissement signalé.
-- Le validateur refuse un manifeste abi=999 (code 1) et les arguments absents
-  (code 2).
-- Validation statique des deux mods déjà installés : réussie, ABI 1 compatible.
+Passed at the time:
+- build-sdk.cmd: C/C++ compilation, x64 sample, static validation without DLL
+  execution, then actual sample loading with per-world settings.
+- Sample values messages=false, mode=Rapide and intensity=125.
+- Once-per-process initialization and reuse of the same session.
+- build-test-mods.cmd: both internal fixtures build/load through the SDK.
+- test-mod-settings.cmd: types, world/mod isolation, conflicts, persistence
+  and restart behavior with actual DLLs.
+- tools/analyze-loader.cmd: /W4 /analyze, no reported warning.
+- Validator rejects abi=999 with exit 1 and missing arguments with exit 2.
+- Static validation of the two installed mods, compatible ABI 1.
 
-Le validateur réutilise directement makeLoadPlan du chargeur. Il n'exécute aucune
-DLL du paquet, ne certifie pas le gameplay et ne fournit pas de sandbox.
-Le standard préserve le contrat ABI 1 existant. Configure reste obligatoire pour
-les mods à paramètres et facultative pour les anciens mods sans paramètres.
-Le multijoueur/serveur est explicitement une extension future, pas une capacité V1.
+The validator directly reuses makeLoadPlan. It executes no package DLL, certifies
+no gameplay and provides no sandbox. ABI 1 remains unchanged. Configure is
+required for mods with settings and optional for those without. Server/network
+support is a future extension, not a V1 capability.
 
-La DLL du chargeur installée n'a pas été remplacée : son hash et celui de dist
-restent C72EB61B7FE86B0B7A61ADFBCF25923341A89CAB3104D30F7E18103486AB0F1B.
-Les sorties SDK sont sous build ; aucun mod d'exemple n'a été installé dans le jeu.
+The installed loader was not replaced by that SDK-only validation. Its historical
+hash and the then-current dist hash were
+C72EB61B7FE86B0B7A61ADFBCF25923341A89CAB3104D30F7E18103486AB0F1B.
+Outputs stayed under build; no sample mod was installed into the game.

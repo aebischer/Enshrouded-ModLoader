@@ -75,13 +75,13 @@ int wmain(int argc,wchar_t** argv) {
     plan=LoadPlan{};
     // Import table cannot silently activate a disabled/undeclared DLL.
     manifest(mods/L"audit_parent.dll"); manifest(mods/L"audit_dependency.dll","library");
-    assert(!makeLoadPlan({"audit_parent.dll"},plan,error) && error.find("non declaree")!=std::string::npos);
+    assert(!makeLoadPlan({"audit_parent.dll"},plan,error) && error.find(loaderText("err.undeclared"))!=std::string::npos);
     assert(!GetModuleHandleW(L"audit_dependency.dll")); plan=LoadPlan{};
     manifest(mods/L"audit_parent.dll","mod","require=audit_dependency.dll@2.0\n");
     assert(!makeLoadPlan({"audit_parent.dll"},plan,error)); plan=LoadPlan{};
     manifest(mods/L"audit_parent.dll","mod","require=audit_dependency.dll@1.0\n");
     manifest(mods/L"audit_dependency.dll","mod");
-    assert(!makeLoadPlan({"audit_parent.dll"},plan,error) && error.find("desactive")!=std::string::npos); plan=LoadPlan{};
+    assert(!makeLoadPlan({"audit_parent.dll"},plan,error) && error.find(loaderText("err.required_disabled"))!=std::string::npos); plan=LoadPlan{};
     manifest(mods/L"audit_dependency.dll","library","require=audit_parent.dll@1.0\n");
     assert(!makeLoadPlan({"audit_parent.dll"},plan,error)); plan=LoadPlan{};
     manifest(mods/L"audit_dependency.dll","library");

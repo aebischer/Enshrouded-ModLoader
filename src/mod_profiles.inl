@@ -57,51 +57,51 @@ static bool profileExists(const std::string& key) {
 }
 static bool readProfile(const std::string& key,std::set<std::string>& out,std::string& error) {
     out.clear(); error.clear();
-    if(worldId(key).empty()) {error="Identifiant du monde invalide"; return false;}
+    if(worldId(key).empty()) {error=loaderText("err.world_id"); return false;}
     if(!profileExists(key)) return true; // Absence explicitly means an empty configuration.
     std::string body;
-    if(!boundedRead(profilePath(key),MaxProfileBytes,body)) {error="Profil illisible ou trop volumineux"; return false;}
+    if(!boundedRead(profilePath(key),MaxProfileBytes,body)) {error=loaderText("err.profile_read"); return false;}
     if(body.compare(0,3,"\xef\xbb\xbf")==0) body.erase(0,3);
     std::istringstream in(body); std::string line;
     auto lineRead=[&] {if(!std::getline(in,line)) return false; if(!line.empty() && line.back()=='\r') line.pop_back(); return true;};
-    if(!lineRead() || line!="ENSHROUDED_MODS_V1") {error="Fichier de configuration des mods invalide"; return false;}
+    if(!lineRead() || line!="ENSHROUDED_MODS_V1") {error=loaderText("err.profile_invalid"); return false;}
     std::set<std::string> parsed;
     while(lineRead()) {
         if(line.empty()) continue;
         auto name=modId(line);
-        if(name.empty() || parsed.size()>=MaxMods || !parsed.insert(name).second) {error="Liste de mods invalide (limite ou doublon)"; return false;}
+        if(name.empty() || parsed.size()>=MaxMods || !parsed.insert(name).second) {error=loaderText("err.list_invalid"); return false;}
     }
     out=std::move(parsed); return true;
 }
 // expected != nullptr implements optimistic conflict detection while holding the writer lock.
 static bool saveProfile(const std::string& key,const std::set<std::string>& entries,std::string& error,const std::set<std::string>* expected=nullptr) {
     error.clear();
-    if(worldId(key).empty()) {error="Identifiant du monde invalide"; return false;}
-    if(entries.size()>MaxMods) {error="Trop de mods (1024 maximum)"; return false;}
+    if(worldId(key).empty()) {error=loaderText("err.world_id"); return false;}
+    if(entries.size()>MaxMods) {error=loaderText("err.mod_limit"); return false;}
     std::string body="ENSHROUDED_MODS_V1\n";
     for(const auto& entry:entries) {
-        if(modId(entry)!=entry) {error="Chemin de mod invalide"; return false;}
+        if(modId(entry)!=entry) {error=loaderText("err.mod_path"); return false;}
         body+=entry+"\n";
     }
     const auto path=profilePath(key),dir=path.parent_path();
     std::error_code ec; std::filesystem::create_directories(dir,ec);
-    if(ec) {error="Creation du dossier de configuration impossible"; return false;}
+    if(ec) {error=loaderText("err.folder_create"); return false;}
     FileHandle lock(CreateFileW((path.wstring()+L".lock").c_str(),GENERIC_WRITE,0,nullptr,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr));
-    if(lock.value==INVALID_HANDLE_VALUE) {error="Profil utilise par un autre programme. Actualise puis reessaie."; return false;}
+    if(lock.value==INVALID_HANDLE_VALUE) {error=loaderText("err.profile_locked"); return false;}
     if(expected) {
         std::set<std::string> current;
         if(!readProfile(key,current,error)) return false;
-        if(current!=*expected) {error="Le profil a change. Actualise avant de modifier."; return false;}
+        if(current!=*expected) {error=loaderText("err.profile_changed"); return false;}
     }
     const auto temp=path.wstring()+L"."+std::to_wstring(GetCurrentProcessId())+L"."+std::to_wstring(GetTickCount64())+L".tmp";
     FileHandle file(CreateFileW(temp.c_str(),GENERIC_WRITE,0,nullptr,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,nullptr));
-    if(file.value==INVALID_HANDLE_VALUE) {error="Enregistrement des choix impossible"; return false;}
+    if(file.value==INVALID_HANDLE_VALUE) {error=loaderText("err.profile_write"); return false;}
     DWORD written=0;
     bool ok=WriteFile(file.value,body.data(),static_cast<DWORD>(body.size()),&written,nullptr) && written==body.size();
     if(ok) ok=FlushFileBuffers(file.value)!=0;
     CloseHandle(file.value); file.value=INVALID_HANDLE_VALUE;
     if(ok) ok=MoveFileExW(temp.c_str(),path.c_str(),MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH)!=0;
-    if(!ok) {DeleteFileW(temp.c_str()); error="Enregistrement des choix impossible";}
+    if(!ok) {DeleteFileW(temp.c_str()); error=loaderText("err.profile_write");}
     return ok;
 }
 static void openProfile(const std::string& key) {
@@ -132,13 +132,13 @@ static bool toggleMod(const std::string& file) {
     if(!enabledMods.count(id)) {
         Package package;
         if(!readPackage(id,package,profileError)) return false;
-        if(!package.mod) {profileError="Cette bibliotheque est geree par ses mods dependants."; return false;}
+        if(!package.mod) {profileError=loaderText("err.library_managed"); return false;}
     }
     auto next=enabledMods;
     if(next.count(id)) next.erase(id); else next.insert(id);
     if(!saveProfile(selectedKey,next,profileError,&enabledMods)) return false;
     enabledMods=std::move(next); launchError.clear();
-    profileNotice="Choix enregistr\xc3\xa9s pour ce monde."; return true;
+    profileNotice=loaderText("notice.saved"); return true;
 }
 
 static void pluginLog(const char* message) noexcept {try {if(message) log(std::string("[mod] ")+std::string(message,strnlen_s(message,4096)));} catch(...) {}}
@@ -150,7 +150,7 @@ static bool prepareWorldMods(const std::string& key,std::string& error) {
     if(!readProfile(key,desired,error)) return false;
     settingsRestartPending=false;
     if(sessionCommitted && sessionWorld==worldId(key) && !matchesSessionSettings(key,error)) {settingsRestartPending=true; return false;}
-    if(needsRestart(key,desired)) {error="Redemarre le jeu pour appliquer les mods de ce monde."; return false;}
+    if(needsRestart(key,desired)) {error=loaderText("ui.restart_world"); return false;}
     if(sessionCommitted) return matchesSessionSettings(key,error);
     LoadPlan plan;
     if(!makeLoadPlan(desired,plan,error)) return false;
@@ -165,17 +165,17 @@ static bool prepareWorldMods(const std::string& key,std::string& error) {
     for(const auto& item:plan.ordered) {
         sessionTainted=true;
         const auto module=loadMod(item.path.c_str());
-        if(!module) {error="Chargement impossible : "+item.id+" ("+std::to_string(GetLastError())+"). Redemarre le jeu."; log(error); return false;}
-        if(std::find(residentMods.begin(),residentMods.end(),module)!=residentMods.end()) {error="Module deja resident : "+item.id+". Redemarre le jeu."; return false;}
+        if(!module) {error=loaderText("err.load")+item.id+" ("+std::to_string(GetLastError())+")"; log(error); return false;}
+        if(std::find(residentMods.begin(),residentMods.end(),module)!=residentMods.end()) {error=loaderText("err.resident")+item.id; return false;}
         residentMods.push_back(module);
         if(item.mod) {
             if(!item.settings.empty()) {
                 const auto configure=reinterpret_cast<int(*)(const char*,const char*)>(GetProcAddress(module,"EnshroudedModConfigure"));
                 const auto values=settingsText(sessionSettings.at(item.id));
-                if(!configure || configure(sessionWorld.c_str(),values.c_str())!=1) {error="Configuration refusee : "+item.id+". Redemarre le jeu."; return false;}
+                if(!configure || configure(sessionWorld.c_str(),values.c_str())!=1) {error=loaderText("err.configure")+item.id; return false;}
             }
             const auto init=reinterpret_cast<int(*)(const EnshroudedModContext*)>(GetProcAddress(module,"EnshroudedModInitialize"));
-            if(!init || init(&modContext)!=1) {error="Initialisation refusee : "+item.id+". Redemarre le jeu."; log(error); return false;}
+            if(!init || init(&modContext)!=1) {error=loaderText("err.initialize")+item.id; log(error); return false;}
         }
         log("Loaded "+item.id+" version="+item.version+" world="+sessionWorld);
     }

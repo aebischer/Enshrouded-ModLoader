@@ -1,211 +1,207 @@
-STANDARD DES MODS — Enshrouded ModLoader — version 1
-Statut : contrat du projet, ABI 1 existante, documenté le 13 novembre 2026.
-Ce document est la référence normative commune aux mods internes et externes.
-Ce n'est pas un standard officiel de Keen Games ni une API officielle du jeu.
+MOD STANDARD — Enshrouded ModLoader — Version 1
+Project contract: existing ABI 1, documented November 13, 2026; updated for 0.6.11.
+This is the normative reference for internal and third-party mods.
+It is not an official Keen Games standard or an official game API.
 
-1. Un même contrat pour tous
+1. One contract for all mods
 
-Tout mod compatible suit les mêmes règles, passe la même validation et utilise
-le même SDK. Aucun privilège ni format spécial pour Test_A, Test_B ou CarryOn.
-Le chargeur ne convertit pas automatiquement les DLL d'autres frameworks.
-Un développeur externe doit adapter son mod à ce contrat et vérifier les
-versions du jeu/chargeur avec lesquelles son code fonctionne.
+Every compatible mod follows the same rules, validation and SDK. Internal test
+fixtures and CarryOn have no special package format or privileges. DLLs from
+other frameworks are not converted automatically. Authors must implement this
+contract and verify their game's and loader's supported versions.
 
-Deux versions distinctes :
-- ENSHROUDED_PACKAGE_V1 : syntaxe du manifeste.
-- abi=1 : interface binaire des fonctions et du contexte.
-Le numéro version=... est celui du mod, indépendant des deux précédents.
-Le chargeur actuel est 0.6.10 ; ses offsets sont limités à l'exécutable identifié
-par SHA-256 dans src/loader.cpp. Un manifeste accepté ne garantit pas qu'un mod
-utilisant ses propres offsets soit compatible avec cet exécutable.
+There are two independent versions:
+- ENSHROUDED_PACKAGE_V1: manifest syntax.
+- abi=1: binary function and context interface.
+The mod's version=... is independent of both. The current loader is 0.6.11,
+pinned to the executable SHA-256 in src/loader.cpp. Acceptance of a manifest
+does not validate a mod's own native offsets.
 
-2. Paquet distribué et identité
+2. Distributed package and identity
 
-Arborescence recommandée du paquet, à extraire dans le dossier du jeu :
+Recommended layout, extracted into the game directory:
 
 Mods/
-  auteur/
-    auteur_monmod.dll
-    auteur_monmod.dll.mod
+  author/
+    author_mymod.dll
+    author_mymod.dll.mod
 
-Obligatoires : une DLL Windows x64 et le manifeste voisin portant exactement
-le nom de la DLL suivi de .mod. Un dossier unique par auteur/projet est conseillé.
-Le nom de base des DLL du graphe doit lui aussi être unique, même entre dossiers.
-Le paquet d'un mod ne distribue pas son propre dinput8.dll : celui-ci appartient
-au chargeur. Sources, README et licence peuvent être livrés en complément.
+Required: a Windows x64 DLL and an adjacent manifest whose name is exactly the
+DLL filename plus .mod. Use a unique project/author directory. DLL basenames
+must also be unique throughout the dependency graph, even across directories.
+A mod does not distribute its own dinput8.dll; that file belongs to the loader.
+Sources, README files and licenses may be supplied alongside the package.
 
-L'identifiant est le chemin de DLL relatif à Mods, normalisé par le chargeur en
-minuscules avec /. Exemple : auteur/auteur_monmod.dll.
-Garder cet identifiant stable : le renommer change l'identité dans les profils
-et les paramètres. Déplacer ou renommer un mod demande une migration explicite.
-Pas de chemin absolu, de remontée .., de flux NTFS, ni de sortie du dossier Mods.
-Les alias physiques et les noms de DLL ambigus sont refusés au préchargement.
+The mod ID is its DLL path relative to Mods, normalized to lowercase and /.
+Example: author/author_mymod.dll. Keep it stable. Renaming or moving a mod
+changes its identity in world profiles and settings and requires explicit
+migration. Absolute paths, .. traversal, NTFS streams and paths outside Mods
+are rejected. Physical aliases and ambiguous DLL names fail preflight.
 
-3. Manifeste commun (UTF-8, BOM facultatif, LF ou CRLF)
+3. Manifest (UTF-8, optional BOM, LF or CRLF)
 
 ENSHROUDED_PACKAGE_V1
 kind=mod
 version=1.0.0
 abi=1
 setting=messages|bool|Messages|true
-setting=mode|choice|Mode|Normal|Calme|Normal|Rapide
-setting=intensity|percent|Intensité|100|0|200|25
+setting=mode|choice|Mode|normal|slow|normal|fast
+setting=intensity|percent|Intensity|100|0|200|25
 
-kind, version et abi sont obligatoires et uniques. Aucune clé inconnue n'est
-acceptée : ne pas ajouter author, id, side ou network dans ce format V1.
-version utilise 1 à 64 caractères ASCII parmi lettres, chiffres, point, tiret et
-underscore. Recommandation de publication : MAJEUR.MINEUR.CORRECTIF. Le chargeur
-compare les versions de dépendances comme des chaînes exactes, pas des plages.
+kind, version and abi are mandatory and unique. Unknown keys are rejected:
+do not add author, id, side, assets, network or min_loader_version to V1.
+Version strings have 1–64 ASCII letters/digits, dots, hyphens or underscores.
+MAJOR.MINOR.PATCH is recommended. Dependency versions are exact strings,
+not semantic-version ranges.
 
-Dépendance facultative, répétable pour des identifiants différents :
-require=auteur/auteur_support.dll@1.0.0
-Le chemin est relatif à Mods, pas au dossier de la DLL qui le déclare.
-Un mod requis doit être activé explicitement. Une bibliothèque de support utilise
-kind=library et est chargée automatiquement ; elle ne déclare ni paramètres ni
-export EnshroudedModInitialize. Elle possède également son propre manifeste.
-Tous les imports non système doivent être déclarés. Les imports ordinaires et
-différés, versions exactes et cycles sont vérifiés avant la première exécution.
-Limites : 16 Kio par manifeste, 64 dépendances directes, profondeur 64 et 1024
-modules au total. Les clés inconnues, doublons et ABI non supportées sont refusés.
+Optional dependency, repeatable for distinct IDs:
+require=author/author_support.dll@1.0.0
 
-4. Fonctions d'intégration — sdk/include/enshrouded_mod.h
+Paths are relative to Mods, not to the declaring DLL's directory. A required
+kind=mod dependency must be explicitly enabled. A support DLL declares
+kind=library and loads automatically when required. It has its own manifest,
+no settings and no EnshroudedModInitialize export.
 
-Obligatoire pour kind=mod :
+Declare all non-system imports, including delay imports. Exact versions,
+ordinary/delay imports and cycles are checked before any module executes.
+Limits: 16 KiB per manifest, 64 direct dependencies, depth 64 and 1,024 modules
+in total. Duplicate/unknown keys and unsupported ABIs are rejected.
+
+4. Integration exports — sdk/include/enshrouded_mod.h
+
+Required for kind=mod:
 ENSHROUDED_MOD_EXPORT int ENSHROUDED_MOD_CALL EnshroudedModInitialize(
     const EnshroudedModContext* context);
 
-Obligatoire si le manifeste déclare des paramètres :
+Required when the manifest declares settings:
 ENSHROUDED_MOD_EXPORT int ENSHROUDED_MOD_CALL EnshroudedModConfigure(
     const char* world_id, const char* settings_utf8);
 
-Configure est facultative pour les anciens mods sans paramètres et n'est pas
-appelée dans ce cas. Le modèle fourni contient les deux fonctions. Ne pas
-inventer d'autres fonctions obligatoires ni supposer que des exports personnels
-seront automatiquement appelés par le chargeur.
+Configure is optional and not called when there are no settings. The supplied
+example implements both exports. Do not invent other mandatory exports or
+assume the loader calls custom exports automatically.
 
-Retour : 1 = succès, 0 = échec. Tout autre résultat est traité comme un refus.
-Liaison C, convention __cdecl, architecture x64 ; ne pas modifier le packing.
-Contexte ABI 1 de 24 octets : size, abi_version, world_id, write_log.
-Vérifier les pointeurs, size >= sizeof(EnshroudedModContext) et abi_version == 1.
-Le world_id est le GUID du monde, 32 caractères hexadécimaux minuscules.
-Configure reçoit toutes les valeurs effectives, défauts compris, sous forme de
-lignes UTF-8 clé=valeur triées par clé et séparées par LF.
-Ses pointeurs sont empruntés seulement pour la durée de cet appel : copier ce
-qui doit être conservé. Le contexte d'Initialize et son world_id restent valides
-jusqu'à la fermeture du processus. Ne jamais libérer ou modifier la mémoire du
-chargeur. Aucune allocation C++ ne doit être échangée entre modules.
-Le logger reçoit un texte UTF-8 terminé par zéro, tronqué à 4096 octets.
-Ne pas laisser sortir d'exception C++ de ces fonctions.
+Return exactly 1 for success or 0 for failure. Any other value is a refusal.
+Use C linkage, __cdecl and x64; do not alter structure packing.
+ABI 1 context size: 24 bytes, containing size, abi_version, world_id, write_log.
+Check pointers, size >= sizeof(EnshroudedModContext), and abi_version == 1.
+world_id is the world's 32-character lowercase hexadecimal GUID.
 
-5. Ordre et durée de vie
+Configure receives all effective values, including defaults, as UTF-8 key=value
+lines sorted by key and separated by LF. Its pointers are borrowed for that
+call only; copy anything retained. The Initialize context and its world_id
+remain valid until process exit. Never modify/free loader-owned memory or
+exchange C++ allocations between modules. The logger accepts a NUL-terminated
+UTF-8 string, truncated to 4,096 bytes. C++ exceptions must not cross the ABI.
 
-La page MODS lit le manifeste ; elle n'exécute pas la DLL pour dessiner ses options.
-Au lancement : validation complète du graphe, lecture des paramètres du monde,
-puis chargement dans l'ordre des dépendances. Pour chaque mod avec paramètres :
-Configure puis Initialize. Sans paramètres : Initialize seulement.
-Les exports sont appelés hors DllMain ; DllMain peut toutefois s'exécuter lors de
-LoadLibrary. Ne pas y initialiser le gameplay, installer des hooks ni créer des
-threads. Le modèle n'ajoute aucun DllMain.
-L'initialisation est unique par processus. Aucun arrêt, déchargement à chaud ou
-callback d'ouverture/fermeture de monde n'existe dans ABI 1.
-Une DLL partiellement initialisée peut rester résidente : un refus exige alors
-un redémarrage. Les mods doivent respecter ce cycle et gérer leurs ressources
-sans supposer qu'Initialize est rappelée à chaque retour dans le même monde.
+5. Order and lifetime
 
-6. Paramètres communs et stockage
+The MODS page reads the manifest; it does not execute a DLL to draw its options.
+At world launch, the loader validates the complete graph and reads all settings,
+then loads dependencies before dependants. For each mod with settings it calls
+Configure, then Initialize. Without settings it calls Initialize only.
 
-Le chargeur gère l'interface native, les défauts, la validation et la persistance
-par monde ; le mod consomme les valeurs reçues. Ne pas dupliquer les paramètres
-de gameplay dans un autre fichier concurrent appartenant au mod.
-Types V1 :
-- bool : clé|bool|libellé|true ou false.
-- choice : clé|choice|libellé|défaut|choix1|choix2[...], 2 à 8 choix distincts.
-- percent : clé|percent|libellé|défaut|min|max|pas ; valeurs entières de 0 à 10000,
-  min < max, pas positif, défaut sur la grille et 32 positions maximum.
-Maximum 16 paramètres. Clé de 1 à 40 caractères [a-z0-9_]. Champs de 100 octets
-maximum. Pas de =, tabulation, retour à la ligne, zéro ou séparateur | dans les
-valeurs/libellés. Le défaut doit appartenir aux valeurs autorisées.
-Le booléen est affiché avec le contrôle natif Activé/Désactivé ; les choix et les
-pourcentages utilisent également les composants natifs de difficulté.
+These exports run outside DllMain, although LoadLibrary may execute DllMain.
+Do not start gameplay, install hooks or create threads inside DllMain. The
+example does not define one. Initialization is once per process. ABI 1 has no
+shutdown, hot-unload or world-open/world-close callback. A partially initialized
+DLL may remain resident and require restarting the game after refusal.
+Manage resources without assuming Initialize runs again when re-entering a world.
 
-Le stockage appartient au chargeur : ModLoader/worlds/<GUID>.mods et, depuis
-0.6.9, <GUID>.settings-v2/<SHA256(id normalisé UTF-8)>.ini.
-Les réglages sont conservés quand un mod est désactivé. Fichier absent = défauts,
-fichier invalide = erreur, pas un remplacement silencieux par les défauts.
-Les mods ne doivent pas dépendre directement du nom physique de ces fichiers.
-Changer un schéma peut rendre les anciens réglages invalides. V1 ne fournit pas
-de callback de migration de schéma : conserver les clés/valeurs compatibles ou
-prévoir et documenter la migration avant diffusion d'une mise à jour.
+6. Settings and storage
 
-7. Évolution, serveur et confiance
+The loader owns native UI, defaults, validation and per-world persistence.
+The mod consumes supplied values; do not duplicate these gameplay settings in
+a competing configuration file.
 
-ABI 1 reste figée : pas de changement silencieux de disposition du contexte,
-de signature ou d'ordre des appels. Un futur changement incompatible nécessitera
-une ABI explicite et un chargeur qui la supporte. Changer seulement version=...
-ne rend pas une ABI incompatible acceptable.
+V1 types:
+- bool: key|bool|label|true or false.
+- choice: key|choice|label|default|choice1|choice2[...], 2–8 distinct choices.
+- percent: key|percent|label|default|min|max|step. Integers from 0 to 10000,
+  min < max, positive step, default on the grid, at most 32 positions.
 
-Le multijoueur et le serveur dédié ne sont pas certifiés par ce standard V1.
-Il n'existe encore ni API réseau, ni échange de versions à la connexion, ni champ
-side client/server/both. Ces capacités demanderont une extension versionnée,
-avec serveur faisant autorité et paramètres détenus par le monde du serveur.
-Voir docs/server-multiplayer-decisions.txt pour les décisions CarryOn.
-Ne pas annoncer un support serveur sur la seule base de la validation du paquet.
+Maximum 16 settings. Keys: 1–40 characters [a-z0-9_]. Fields: at most 100 bytes.
+Labels/values cannot contain =, tab, newline, NUL or the | separator. Defaults
+must be valid values. Boolean controls display localized Enabled/Disabled;
+choices and percentages use the native difficulty controls.
 
-Une DLL est du code natif de confiance, pas du code isolé. Le préchargement détecte
-des erreurs de format et de dépendances ; il ne certifie ni la sécurité du mod,
-ni son comportement, ni son absence de conflit avec les hooks d'autres mods.
+Loader-owned storage:
+ModLoader/worlds/<GUID>.mods
+ModLoader/worlds/<GUID>.settings-v2/<SHA256-normalized-UTF8-mod-id>.ini
 
-8. Procédure commune de publication
+Settings persist while a mod is disabled. Missing files mean defaults; invalid
+files produce an error, not silent replacement. Mods should not depend directly
+on these physical filenames. Schema changes can invalidate old settings. V1
+has no schema-migration callback: keep keys/values compatible or document and
+implement migration before distributing an incompatible change.
 
-1) Utiliser le header public et partir du modèle sdk/example.
-2) Compiler Windows x64 ; le modèle utilise le CRT statique /MT pour limiter
-   les dépendances externes. Ne pas copier des runtimes au hasard avec le mod.
-3) Livrer DLL, manifeste et dépendances déclarées dans l'arborescence Mods.
-4) Exécuter le validateur commun sans démarrer le jeu :
-   build/validate_mod_package.exe <racine-du-paquet-contenant- Mods> auteur/auteur_monmod.dll
-   Ajouter les identifiants des autres mods requis/activés en arguments.
-   Les bibliothèques sont résolues automatiquement. Code retour 0 = conforme
-   aux contrôles statiques, 1 = refus, 2 = arguments invalides.
-5) Tester ensuite dans une partie de test : configuration de deux mondes,
-   valeurs limites, refus explicite et redémarrage. Documenter les versions
-   réellement testées du jeu et du chargeur, ainsi que les éventuelles limites.
+7. Evolution, servers and trust
 
-Le validateur appelle makeLoadPlan du chargeur, sans charger le code des DLL.
-Il ne constitue pas un second ensemble de règles différent du chargeur.
-Les deux mods internes Test_A et Test_B utilisent le même header public, les mêmes
-manifestes, le même préchargement et les mêmes règles de cycle de vie.
+ABI 1 is fixed: no silent changes to context layout, signatures or call order.
+An incompatible extension needs an explicit ABI and a loader supporting it.
+Changing version=... alone does not make a different ABI compatible.
 
-LOCALISATION (extension du manifeste, chargeur 0.6.10 ou ultérieur)
+Multiplayer and dedicated-server support are not certified by V1. There is no
+network API, connection-time version negotiation or client/server/both field.
+These need a versioned extension, server authority and settings owned by the
+server's world. See docs/server-multiplayer-decisions.txt in the loader repo.
+Do not claim server support solely because package validation succeeds.
 
-Les textes visibles doivent suivre la langue sélectionnée dans Enshrouded,
-et non celle de Windows. Les identifiants et valeurs sauvegardées restent stables.
-L'ABI 1 reste inchangée. Les anciens manifestes restent acceptés ; un ancien
-chargeur ne reconnaît pas les nouvelles lignes text et doit être mis à jour.
+A DLL is trusted native code, not isolated code. Preflight detects format and
+dependency errors; it does not certify safety, behavior or freedom from hook
+conflicts. It cannot prevent DLLs from loading additional code themselves.
 
-Exemple pour un paramètre choice de clé mode, choix internes low et high :
-  text=en|setting.mode|Mode
-  text=fr|setting.mode|Mode de transport
-  text=en|choice.mode.0|Low
-  text=fr|choice.mode.0|Faible
-  text=fr|choice.mode.1|Élevé
+8. Release procedure
 
-Encodage UTF-8. Une ligne par langue et clé ; doublons et clés inconnues refusés.
-Libellé : 1 à 100 octets UTF-8, sans séparateurs | ou = ni tabulation/retour ligne.
-Les limites globales du manifeste restent applicables (16 Kio).
-Le booléen utilise les libellés Activé/Désactivé traduits par le chargeur.
-Le pourcentage conserve sa valeur numérique et le suffixe %.
-Repli : langue exacte, parent régional, anglais, puis libellé du paramètre.
-Exemples : fr-ca -> fr -> en ; es-mx -> es-419 -> es -> en.
+1) Use the public header and start from sdk/example.
+2) Build Windows x64. The example uses /MT to reduce external runtime dependencies.
+3) Package the DLL, manifest and declared dependencies under Mods.
+4) Run the common validator without launching the game:
+   build/validate_mod_package.exe <package-root-containing-Mods> author/author_mymod.dll
+   Add other enabled/required mod IDs as arguments. Libraries resolve automatically.
+   Exit codes: 0 = static checks passed; 1 = refused; 2 = invalid arguments.
+5) Test two worlds with distinct settings, limits, explicit refusals, restarts,
+   save/reload and relevant gameplay. Document the actually tested game/loader
+   versions and remaining limitations.
 
-include/enshrouded_i18n.h (C++17, facultatif) expose la correspondance des IDs
-natifs du client pris en charge et la recherche dans un catalogue embarqué.
-Il ne lit pas la mémoire du jeu et n'ajoute pas d'API native à l'ABI.
-Le mod doit raccorder ses noms/descriptions d'objets au service de texte du jeu
-avec son adaptateur validé pour la version du client. Le manifeste traduit
-uniquement les paramètres du mod, pas arbitrairement toutes les ressources.
-Langues actuellement proposées par le jeu : en, de, fr, it, es, ru, pl, ja,
-ko, pt-br, th, tr, zh-cn, zh-tw, uk. Les autres codes natifs sont dans le header.
-Les traductions sont du texte de présentation, jamais des valeurs de sauvegarde.
-Guide pratique complet : LOCALISATION.txt. Exemples exécutables dans
-example/example_mod.dll.mod et example/localized_texts.h ; build-sdk.cmd
-vérifie les traductions ainsi que la stabilité des valeurs sauvegardées.
+The validator calls the loader's makeLoadPlan without executing mod DLLs; it
+is not a separate rule set. Test_A/Test_B are development fixtures using the
+same public header, manifests, preflight and lifetime rules as other mods.
+They are not included in the player distribution.
+
+9. Localization (manifest extension, ModLoader 0.6.10+)
+
+Player-facing text follows the language selected in Enshrouded, not Windows.
+IDs and saved values remain stable. ABI 1 is unchanged. Old manifests remain
+accepted; older loaders reject text entries and must be updated.
+
+For a choice setting named mode, with internal values low/high:
+text=en|setting.mode|Mode
+text=fr|setting.mode|Mode de transport
+text=en|choice.mode.0|Low
+text=en|choice.mode.1|High
+text=fr|choice.mode.0|Faible
+text=fr|choice.mode.1|Élevé
+
+One UTF-8 entry per language/key. Unknown or duplicate keys are rejected.
+Labels: 1–100 UTF-8 bytes, without |, =, tabs, newlines or NUL. The global 16 KiB
+manifest limit still applies. Booleans use loader translations; percentages
+retain their numeric values and % suffix.
+
+Fallback: exact language, regional parent, English, then the declared setting
+label. Examples: fr-ca -> fr -> en; es-mx -> es-419 -> es -> en.
+
+Optional C++17 include/enshrouded_i18n.h maps native language IDs and looks up
+embedded catalogues. It does not read game memory or add a native API to ABI 1.
+The mod must connect its item resource IDs to the game's text service using
+an adapter validated against the supported client. Manifest text entries
+translate settings only, not arbitrary game resources.
+
+Game interface languages: en, de, fr, it, es, ru, pl, ja, ko, pt-br, th, tr,
+zh-cn, zh-tw, uk. Other recognized engine codes appear in the header; they do
+not imply additional supported interface translations. supportedLanguages
+lists the actual native IDs; these are not the contiguous range 0..14.
+
+See LOCALISATION.txt for the full procedure and strict 15-language catalogue
+compiler supplied with SDK 0.6.11. build-sdk.cmd tests the bilingual example
+and verifies that changing labels does not change saved values.

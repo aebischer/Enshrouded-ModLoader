@@ -70,8 +70,8 @@ struct NativeSettingsScroll {
 static void renderNativeModSettings(const std::string& id) {
     auto& view=settingsViews.at(id);
     const auto language=gameLanguage();
-    if(view.package.settings.empty()) {pageLabel("Aucun param\xc3\xa8tre configurable pour ce mod."); return;}
-    if(!view.error.empty()) {pageLabel(view.error.c_str()); pageLabel("Actualise pour relire les param\xc3\xa8tres."); return;}
+    if(view.package.settings.empty()) {pageLabel(loaderText("ui.no_settings")); return;}
+    if(!view.error.empty()) {pageLabel(view.error.c_str()); pageLabel(loaderText("ui.refresh_settings")); return;}
     // The native scroll borrows this plain 0x18-byte state; it stays alive between frames.
     static std::string scrollIdentity;
     alignas(16) static unsigned char scrollState[0x18]{};

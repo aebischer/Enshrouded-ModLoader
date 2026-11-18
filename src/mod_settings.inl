@@ -22,18 +22,18 @@ static bool migrateSettings(const std::string& world,const std::string& id,std::
     const auto path=settingsPath(world,id),legacy=legacySettingsPath(world,id);
     std::error_code ec;
     if(std::filesystem::exists(path,ec)) return true;
-    if(ec) {error="Lecture des parametres impossible"; return false;}
+    if(ec) {error=loaderText("err.settings_read"); return false;}
     if(!std::filesystem::is_regular_file(legacy,ec)) {
-        if(ec && ec!=std::errc::no_such_file_or_directory && ec!=std::errc::not_a_directory) {error="Lecture des anciens parametres impossible"; return false;}
+        if(ec && ec!=std::errc::no_such_file_or_directory && ec!=std::errc::not_a_directory) {error=loaderText("err.settings_old_read"); return false;}
         return true;
     }
     std::filesystem::create_directories(path.parent_path(),ec);
-    if(ec) {error="Migration des parametres impossible"; return false;}
+    if(ec) {error=loaderText("err.settings_migrate"); return false;}
     FileHandle lock(CreateFileW((path.wstring()+L".lock").c_str(),GENERIC_WRITE,0,nullptr,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr));
     FileHandle oldLock(CreateFileW((legacy.wstring()+L".lock").c_str(),GENERIC_WRITE,0,nullptr,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr));
-    if(lock.value==INVALID_HANDLE_VALUE || oldLock.value==INVALID_HANDLE_VALUE) {error="Parametres utilises ailleurs. Actualise puis reessaie."; return false;}
+    if(lock.value==INVALID_HANDLE_VALUE || oldLock.value==INVALID_HANDLE_VALUE) {error=loaderText("err.settings_locked"); return false;}
     if(std::filesystem::exists(path,ec)) return true;
-    if(ec || !MoveFileExW(legacy.c_str(),path.c_str(),MOVEFILE_WRITE_THROUGH)) {error="Migration des parametres impossible. Actualise puis reessaie."; return false;}
+    if(ec || !MoveFileExW(legacy.c_str(),path.c_str(),MOVEFILE_WRITE_THROUGH)) {error=loaderText("err.settings_migrate"); return false;}
     return true;
 }
 static SettingValues defaultSettings(const Package& package) {
@@ -49,21 +49,21 @@ static bool validSettingValue(const SettingSpec& spec,const std::string& value) 
 }
 static bool readModSettings(const std::string& world,const Package& package,SettingValues& values,std::string& error) {
     error.clear(); values.clear();
-    if(worldId(world).empty() || modId(package.id)!=package.id) {error="Identifiant de configuration invalide"; return false;}
+    if(worldId(world).empty() || modId(package.id)!=package.id) {error=loaderText("err.settings_id"); return false;}
     auto parsed=defaultSettings(package);
     FileHandle manifestLock(CreateFileW((package.path.wstring()+L".mod").c_str(),GENERIC_READ,FILE_SHARE_READ,nullptr,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,nullptr));
     Package fresh;
-    if(manifestLock.value==INVALID_HANDLE_VALUE || !readPackage(package.id,fresh,error) || fresh.path!=package.path || fresh.manifest!=package.manifest) {error="Manifeste modifie. Actualise avant de continuer."; return false;}
+    if(manifestLock.value==INVALID_HANDLE_VALUE || !readPackage(package.id,fresh,error) || fresh.path!=package.path || fresh.manifest!=package.manifest) {error=loaderText("err.manifest_changed"); return false;}
     if(!migrateSettings(world,package.id,error)) return false;
     const auto path=settingsPath(world,package.id); std::error_code ec;
     if(!std::filesystem::exists(path,ec) && !ec) {values=std::move(parsed); return true;}
     std::string body;
-    if(!boundedRead(path,16384,body)) {error="Parametres illisibles : "+package.id; return false;}
+    if(!boundedRead(path,16384,body)) {error=loaderText("err.settings_unreadable")+package.id; return false;}
     if(body.compare(0,3,"\xef\xbb\xbf")==0) body.erase(0,3);
     std::istringstream in(body); std::string line; std::set<std::string> seen;
-    if(!std::getline(in,line)) {error="Configuration vide"; return false;}
+    if(!std::getline(in,line)) {error=loaderText("err.settings_empty"); return false;}
     if(!line.empty() && line.back()=='\r') line.pop_back();
-    if(line!="ENSHROUDED_SETTINGS_V1") {error="Configuration de parametres invalide"; return false;}
+    if(line!="ENSHROUDED_SETTINGS_V1") {error=loaderText("err.settings_format"); return false;}
     while(std::getline(in,line)) {
         if(!line.empty() && line.back()=='\r') line.pop_back();
         if(line.empty()) continue;
@@ -71,7 +71,7 @@ static bool readModSettings(const std::string& world,const Package& package,Sett
         const auto key=line.substr(0,equal);
         const auto spec=std::find_if(package.settings.begin(),package.settings.end(),[&](const SettingSpec& s){return s.key==key;});
         if(equal==std::string::npos || spec==package.settings.end() || !seen.insert(key).second || !validSettingValue(*spec,line.substr(equal+1))) {
-            error="Valeur de parametre invalide : "+package.id; return false;
+            error=(std::string(loaderText("err.settings_value"))+": ")+package.id; return false;
         }
         parsed[key]=line.substr(equal+1);
     }
@@ -82,43 +82,43 @@ static std::string settingsText(const SettingValues& values) {
 }
 static bool saveModSettings(const std::string& world,const Package& package,const SettingValues& values,const SettingValues& expected,std::string& error) {
     error.clear();
-    if(worldId(world).empty() || modId(package.id)!=package.id || values.size()!=package.settings.size()) {error="Configuration invalide"; return false;}
+    if(worldId(world).empty() || modId(package.id)!=package.id || values.size()!=package.settings.size()) {error=loaderText("err.settings_invalid"); return false;}
     for(const auto& spec:package.settings) {
         const auto value=values.find(spec.key);
-        if(value==values.end() || !validSettingValue(spec,value->second)) {error="Valeur de parametre invalide"; return false;}
+        if(value==values.end() || !validSettingValue(spec,value->second)) {error=loaderText("err.settings_value"); return false;}
     }
     FileHandle manifestLock(CreateFileW((package.path.wstring()+L".mod").c_str(),GENERIC_READ,FILE_SHARE_READ,nullptr,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,nullptr));
     Package fresh;
-    if(manifestLock.value==INVALID_HANDLE_VALUE || !readPackage(package.id,fresh,error) || fresh.path!=package.path || fresh.manifest!=package.manifest) {error="Manifeste modifie. Actualise avant de continuer."; return false;}
+    if(manifestLock.value==INVALID_HANDLE_VALUE || !readPackage(package.id,fresh,error) || fresh.path!=package.path || fresh.manifest!=package.manifest) {error=loaderText("err.manifest_changed"); return false;}
     if(!migrateSettings(world,package.id,error)) return false;
     const auto path=settingsPath(world,package.id); std::error_code ec;
     std::filesystem::create_directories(path.parent_path(),ec);
-    if(ec) {error="Creation du dossier de parametres impossible"; return false;}
+    if(ec) {error=loaderText("err.folder_create"); return false;}
     FileHandle lock(CreateFileW((path.wstring()+L".lock").c_str(),GENERIC_WRITE,0,nullptr,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,nullptr));
-    if(lock.value==INVALID_HANDLE_VALUE) {error="Parametres utilises ailleurs. Actualise puis reessaie."; return false;}
+    if(lock.value==INVALID_HANDLE_VALUE) {error=loaderText("err.settings_locked"); return false;}
     SettingValues current;
     if(!readModSettings(world,package,current,error)) return false;
-    if(current!=expected) {error="Parametres modifies ailleurs. Actualise avant de continuer."; return false;}
+    if(current!=expected) {error=loaderText("err.settings_changed"); return false;}
     const auto body="ENSHROUDED_SETTINGS_V1\n"+settingsText(values);
     const auto temp=path.wstring()+L"."+std::to_wstring(GetCurrentProcessId())+L"."+std::to_wstring(GetTickCount64())+L".tmp";
     FileHandle file(CreateFileW(temp.c_str(),GENERIC_WRITE,0,nullptr,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,nullptr));
-    if(file.value==INVALID_HANDLE_VALUE) {error="Enregistrement des parametres impossible"; return false;}
+    if(file.value==INVALID_HANDLE_VALUE) {error=loaderText("err.settings_write"); return false;}
     DWORD count=0; bool ok=WriteFile(file.value,body.data(),static_cast<DWORD>(body.size()),&count,nullptr) && count==body.size();
     if(ok) ok=FlushFileBuffers(file.value)!=0;
     CloseHandle(file.value); file.value=INVALID_HANDLE_VALUE;
     if(ok) ok=MoveFileExW(temp.c_str(),path.c_str(),MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH)!=0;
-    if(!ok) {DeleteFileW(temp.c_str()); error="Enregistrement des parametres impossible";}
+    if(!ok) {DeleteFileW(temp.c_str()); error=loaderText("err.settings_write");}
     return ok;
 }
 static bool matchesSessionSettings(const std::string& world,std::string& error) {
     for(const auto& loaded:sessionManifests) {
         Package package;
-        if(!readPackage(loaded.first,package,error) || package.manifest!=loaded.second) {error="Redemarre le jeu : manifeste resident modifie ou inaccessible : "+loaded.first; return false;}
+        if(!readPackage(loaded.first,package,error) || package.manifest!=loaded.second) {error=loaderText("err.resident_manifest")+loaded.first; return false;}
     }
     for(const auto& loaded:sessionSettings) {
         Package package; SettingValues values;
         if(!readPackage(loaded.first,package,error) || !readModSettings(world,package,values,error)) return false;
-        if(values!=loaded.second) {error="Redemarre le jeu pour appliquer les parametres de ce monde."; return false;}
+        if(values!=loaded.second) {error=loaderText("ui.restart_world"); return false;}
     }
     return true;
 }

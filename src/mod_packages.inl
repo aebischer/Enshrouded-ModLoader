@@ -44,10 +44,10 @@ static const std::string& packageText(const Package& item,const std::string& key
 static bool packageVersion(const std::string& s) {return !s.empty() && s.size()<=64 && s.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-")==std::string::npos;}
 static bool readPackage(const std::string& id,Package& item,std::string& error) {
     item=Package{}; item.id=id;
-    auto fail=[&] {error="Manifeste invalide ou ABI incompatible : "+id; return false;};
-    if(!modPath(id,item.path)) {error="Fichier absent ou chemin interdit : "+id; return false;}
+    auto fail=[&] {error=loaderText("err.manifest_invalid")+id; return false;};
+    if(!modPath(id,item.path)) {error=loaderText("err.file_path")+id; return false;}
     std::string body;
-    if(!boundedRead(item.path.wstring()+L".mod",16384,body)) {error="Manifeste .dll.mod absent ou illisible : "+id; return false;}
+    if(!boundedRead(item.path.wstring()+L".mod",16384,body)) {error=loaderText("err.manifest_read")+id; return false;}
     item.manifest=body;
     if(!MultiByteToWideChar(CP_UTF8,MB_ERR_INVALID_CHARS,body.data(),static_cast<int>(body.size()),nullptr,0)) return fail();
     if(body.compare(0,3,"\xef\xbb\xbf")==0) body.erase(0,3);
@@ -97,7 +97,7 @@ static bool readPackage(const std::string& id,Package& item,std::string& error) 
             if(dep.empty() || !packageVersion(ver) || !item.dependencies.emplace(dep,ver).second) return fail();
         } else return fail();
     }
-    if(!in.eof() || !header || !kind || !version || !abi || (!item.mod && !item.settings.empty())) {error="Manifeste invalide ou ABI incompatible : "+id; return false;}
+    if(!in.eof() || !header || !kind || !version || !abi || (!item.mod && !item.settings.empty())) {error=loaderText("err.manifest_invalid")+id; return false;}
     for(const auto& locale:item.translations) for(const auto& entry:locale.second) {
         bool known=false;
         for(const auto& spec:item.settings) {
@@ -209,34 +209,34 @@ static bool makeLoadPlan(const std::set<std::string>& desired,LoadPlan& plan,std
     std::function<bool(const std::string&,size_t)> visit;
     visit=[&](const std::string& id,size_t depth) {
         if(done.count(id)) return true;
-        if(depth>64 || visiting.count(id) || packages.size()>=MaxMods) {error="Cycle ou trop de dependances : "+id; return false;}
+        if(depth>64 || visiting.count(id) || packages.size()>=MaxMods) {error=loaderText("err.dependencies")+id; return false;}
         Package item; if(!readPackage(id,item,error)) return false;
-        if(item.mod && !desired.count(id)) {error="Mod requis mais desactive : "+id; return false;}
-        if(!item.mod && desired.count(id)) {error="Une bibliotheque ne s'active pas seule : "+id; return false;}
+        if(item.mod && !desired.count(id)) {error=loaderText("err.required_disabled")+id; return false;}
+        if(!item.mod && desired.count(id)) {error=loaderText("err.library_alone")+id; return false;}
         if(!metadataOnly) {
         auto lock=std::make_unique<FileHandle>(CreateFileW(item.path.c_str(),GENERIC_READ,FILE_SHARE_READ,nullptr,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,nullptr));
         BY_HANDLE_FILE_INFORMATION info{};
-        if(lock->value==INVALID_HANDLE_VALUE || !GetFileInformationByHandle(lock->value,&info)) {error="DLL inaccessible : "+id; return false;}
+        if(lock->value==INVALID_HANDLE_VALUE || !GetFileInformationByHandle(lock->value,&info)) {error=loaderText("err.dll_read")+id; return false;}
         const auto identity=std::to_string(info.dwVolumeSerialNumber)+":"+std::to_string(info.nFileIndexHigh)+":"+std::to_string(info.nFileIndexLow);
         const auto basename=lowerAscii(item.path.filename().u8string());
-        if(!physical.insert(identity).second || !names.insert(basename).second) {error="DLL en double ou nom ambigu : "+id; return false;}
-        if(GetModuleHandleW(item.path.filename().c_str())) {error="DLL deja chargee hors de ce profil : "+id; return false;}
+        if(!physical.insert(identity).second || !names.insert(basename).second) {error=loaderText("err.dll_duplicate")+id; return false;}
+        if(GetModuleHandleW(item.path.filename().c_str())) {error=loaderText("err.dll_external")+id; return false;}
         plan.locks.push_back(std::move(lock));
         }
         packages.emplace(id,item); visiting.insert(id);
         for(const auto& dep:item.dependencies) {
             if(!visit(dep.first,depth+1)) return false;
-            if(packages.at(dep.first).version!=dep.second) {error="Version requise differente : "+dep.first+" @"+dep.second; return false;}
+            if(packages.at(dep.first).version!=dep.second) {error=loaderText("err.version")+dep.first+" @"+dep.second; return false;}
         }
         if(!metadataOnly) {
         std::string bytes; PeFacts facts;
-        if(!boundedRead(item.path,128*1024*1024,bytes) || !inspectPe(bytes,facts) || facts.initialize!=item.mod || (!item.settings.empty() && !facts.configure)) {error="DLL x64/contrat incompatible : "+id; return false;}
+        if(!boundedRead(item.path,128*1024*1024,bytes) || !inspectPe(bytes,facts) || facts.initialize!=item.mod || (!item.settings.empty() && !facts.configure)) {error=loaderText("err.dll_contract")+id; return false;}
         for(const auto& imported:facts.imports) {
             bool declared=false;
             for(const auto& dep:item.dependencies) if(lowerAscii(packages.at(dep.first).path.filename().u8string())==imported) declared=true;
             std::error_code ec;
             const bool local=std::filesystem::exists(item.path.parent_path()/std::filesystem::u8path(imported),ec);
-            if(!declared && (local || ec || !systemImport(imported))) {error="Dependance non declaree : "+id+" -> "+imported; return false;}
+            if(!declared && (local || ec || !systemImport(imported))) {error=loaderText("err.undeclared")+id+" -> "+imported; return false;}
         }
         }
         visiting.erase(id); done.insert(id); plan.ordered.push_back(std::move(item)); return true;

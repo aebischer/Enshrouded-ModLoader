@@ -1,7 +1,9 @@
 #include "../src/loader.cpp"
 #include <fstream>
 #include <cassert>
+#include "../sdk/tests/catalog_checks.h"
 int main() {
+ checkCatalogue(LoaderTexts);
  const auto root=std::filesystem::current_path()/("i18n-test-"+std::to_string(GetCurrentProcessId()));
  std::filesystem::create_directories(root/L"ModLoader");std::filesystem::create_directories(root/L"Mods");
  folder=(root/L"ModLoader").wstring();std::ofstream(root/L"Mods"/L"sample.dll")<<"not executable";

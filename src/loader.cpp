@@ -87,6 +87,7 @@ static uint32_t gameLanguage() {
     const auto pool=readAt<uintptr_t>(reinterpret_cast<void*>(services),0x33ce8);
     return pool?readAt<uint32_t>(reinterpret_cast<void*>(pool),0xd8):1;
 }
+#include "loader_localization.h"
 using WorldLookup=unsigned char*(__fastcall*)(uint16_t);
 using EditFrame=uintptr_t(__fastcall*)(void*,void*);
 using BrowserScreen=void(__fastcall*)(void*);
@@ -122,7 +123,7 @@ static void refreshMods() {
         size_t visited=0;
         const auto deadline=GetTickCount64()+1500;
         while(!ec && it!=end) {
-            if(++visited>8192 || GetTickCount64()>deadline) {catalogError="Inventaire limite : reduis le dossier Mods."; break;}
+            if(++visited>8192 || GetTickCount64()>deadline) {catalogError=loaderText("err.scan_limit"); break;}
             if(it.depth()>=16) it.disable_recursion_pending();
             auto ext=it->path().extension().wstring();
             std::transform(ext.begin(),ext.end(),ext.begin(),[](wchar_t c){return towlower(c);});
@@ -133,7 +134,7 @@ static void refreshMods() {
             if(!ec) it.increment(ec);
         }
     }
-    if(ec) catalogError="Lecture du dossier Mods impossible";
+    if(ec) catalogError=loaderText("err.scan_read");
     for(const auto& id:enabledMods) if(std::find(modFiles.begin(),modFiles.end(),id)==modFiles.end()) modFiles.push_back(id);
     std::sort(modFiles.begin(),modFiles.end());
     modFiles.erase(std::unique(modFiles.begin(),modFiles.end()),modFiles.end());
@@ -283,7 +284,7 @@ __declspec(noinline) static unsigned char __fastcall drawButton(void* config,con
     // Same native column and insertion point as the previous Seed button.
     if(activeWorld && caller==0xc8b2c0) {
         if(pressed) modsOpen=false;
-        if(ownButton("MODS",!selectedKey.empty()) && !pressed) {
+        if(ownButton(loaderText("ui.title"),!selectedKey.empty()) && !pressed) {
             try {openProfile(selectedKey); launchError.clear(); refreshMods();
                 if(activeEditState) worldPageReturn.capture(activeEditState,activeEditMenu);
                 modBackRequested=false; modsOpen=true;
@@ -356,7 +357,7 @@ static void __fastcall startSession(void* request) {
     // Local requests flow through d8ed80 and use their actual world pointer.
     // A remote server must never inherit native DLLs from a local world.
     if(request && !readAt<uintptr_t>(request,0) && (!sessionMods.empty() || sessionTainted)) {
-        try {worldPageReturn.pending=false; launchError="Redemarre le jeu avant de rejoindre un serveur."; modsOpen=true;} catch(...) {uiFailure();}
+        try {worldPageReturn.pending=false; launchError=loaderText("err.restart_server"); modsOpen=true;} catch(...) {uiFailure();}
         log("Remote join refused with resident local mods"); return;
     }
     originalStartSession(request);
@@ -382,7 +383,7 @@ static DWORD initializeImpl() {
         throw std::runtime_error("Cannot pin loader");
     folder=exe; folder.resize(folder.find_last_of(L"\\/"));
     folder+=L"\\ModLoader"; CreateDirectoryW(folder.c_str(),nullptr);
-    log("ModLoader 0.6.10: validated packages and bounded world profiles; RandomWorld excluded");
+    log("ModLoader 0.6.11: validated packages and bounded world profiles; RandomWorld excluded");
     if(!matchingExe(exe)) throw std::runtime_error("Unsupported executable");
     imageBase=reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
     if(!unchangedHookTargets(exe)) throw std::runtime_error("Hook target modified in memory");

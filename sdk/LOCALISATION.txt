@@ -1,9 +1,9 @@
-MOD MULTILINGUE — guide pour les auteurs (chargeur 0.6.10+, ABI 1)
+MULTILINGUAL MODS — author guide (ModLoader 0.6.10+, ABI 1)
 
-1. Traduire les paramètres affichés par le chargeur
+1. Translate settings displayed by the loader
 
-Le fichier voisin de votre DLL, mon_mod.dll.mod, est du texte UTF-8.
-Déclarez les paramètres, puis leurs traductions. Exemple complet :
+The manifest beside your DLL, my_mod.dll.mod, is UTF-8 text. Declare settings
+followed by their translations. Complete bilingual example:
 
 ENSHROUDED_PACKAGE_V1
 kind=mod
@@ -25,78 +25,102 @@ text=fr|choice.mode.2|Rapide
 text=en|setting.intensity|Intensity
 text=fr|setting.intensity|Intensité
 
-setting.<clé> traduit le libellé du paramètre. choice.<clé>.<indice> traduit
-un choix, avec un indice commençant à zéro dans l'ordre de déclaration.
-Les boutons booléens Activé/Désactivé sont traduits par le chargeur ; ne pas
-déclarer choice pour un booléen. Les pourcentages gardent leur suffixe %.
+setting.<key> translates a setting's label. choice.<key>.<index> translates
+one choice; indices start at zero in declaration order. Do not declare choice
+entries for booleans: the loader translates Enabled/Disabled. Percentages
+retain their % suffix.
 
-Le chargeur choisit automatiquement la langue du jeu dans son interface.
-EnshroudedModConfigure reçoit toujours mode=fast, même si le joueur voit
-« Rapide ». Ne traduisez jamais les clés ni les valeurs internes sauvegardées.
-Ne renommez pas non plus les valeurs d'un mod déjà publié pour les angliciser :
-l'exemple historique example_mod conserve ainsi Calme/Normal/Rapide en interne.
+The loader uses the current game language. Configure receives mode=fast even
+when the player sees a translated label. Never translate internal keys or
+saved values. Do not rename values in an already published mod merely to
+make them English; the historical example deliberately retains its internal
+Calme/Normal/Rapide values for compatibility.
 
-Une traduction absente utilise la langue parente, puis en, puis le libellé
-déclaré (ou la valeur interne pour un choix). Exemples : fr-ca -> fr -> en ;
-es-mx -> es-419 -> es -> en ; pt-br -> pt -> en ; en-us/en-gb -> en.
-Un ID de langue inconnu utilise en. Prévoyez toujours les traductions anglaises.
+Missing translations fall back to a regional parent, then en, then the declared
+label (or internal choice value). Examples: fr-ca -> fr -> en;
+es-mx -> es-419 -> es -> en; pt-br -> pt -> en; en-us/en-gb -> en.
+An unknown native ID uses en. Always provide English translations.
 
-Contraintes : codes en minuscules reconnus par enshrouded_i18n.h ; clé de
-1 à 100 caractères [a-z0-9_.] ; valeur de 1 à 100 octets UTF-8, sans |, =,
-tabulation, retour ligne ni NUL. Les clés doivent désigner un paramètre ou
-choix existant. Les doublons langue/clé sont refusés. Limite du manifeste :
-16 Kio. Un caractère accentué peut occuper plusieurs octets.
-Langues proposées par le client pris en charge : en, de, fr, it, es, ru, pl,
-ja, ko, pt-br, th, tr, zh-cn, zh-tw, uk. Les autres codes natifs acceptés
-sont énumérés dans include/enshrouded_i18n.h.
+Manifest constraints: recognized lowercase language codes; keys of 1–100
+characters [a-z0-9_.]; values of 1–100 UTF-8 bytes without |, =, tabs,
+newlines or NUL. Keys must refer to declared settings or choices. Duplicate
+language/key pairs are rejected. Total manifest size: at most 16 KiB.
+Accented and non-Latin characters may occupy multiple bytes.
 
-2. Traduire les objets et autres textes affichés dans le jeu
+The supported client offers en, de, fr, it, es, ru, pl, ja, ko, pt-br, th,
+tr, zh-cn, zh-tw and uk. Other engine codes recognized by the SDK are listed
+in include/enshrouded_i18n.h; they are not additional translated game interfaces.
 
-Les lignes text du manifeste ne traduisent que l'interface des paramètres.
-Elles ne créent pas de ressources natives et ne remplacent pas les textes
-d'objets. Ne mettez pas text=fr|item.name|... dans le manifeste : refusé.
+2. Translate items and other in-game text
 
-Pour ces textes, utilisez un catalogue embarqué C++17. Le fichier
-example/localized_texts.h fournit un exemple compilé et vérifié par les tests
-SDK : exampleText("item.name", nativeLanguageId).
+Manifest text entries only translate the settings UI. They do not create native
+resources or override item text. text=fr|item.name|... in a manifest is rejected.
 
-enshrouded::i18n::find(catalog, key, nativeLanguageId) retourne un pointeur
-vers le texte du catalogue, ou nullptr si la clé manque dans toute la chaîne
-de repli. Avec un catalogue static/constexpr, ce texte reste valide pendant
-la vie de la DLL. Ne libérez pas le pointeur et ne retournez pas un c_str()
-d'une chaîne temporaire au moteur.
+For item text, use an embedded C++17 catalogue. example/localized_texts.h provides
+a compiled, tested example: exampleText("item.name", nativeLanguageId).
 
-IMPORTANT : l'ABI 1 n'expose ni GetLanguage ni un service d'enregistrement de
-textes. Le header ne détecte pas la langue. Le paramètre nativeLanguageId doit
-venir du service de langue réel du jeu via votre adaptateur natif, validé pour
-le client supporté. Ne passez pas un code de locale Windows ou Steam.
-L'exemple est un catalogue, pas un adaptateur moteur prêt à l'emploi.
+enshrouded::i18n::find(catalog, key, nativeLanguageId) returns a catalogue string,
+or nullptr if the key is absent from the whole fallback chain. With a static or
+constexpr catalogue, the pointer remains valid for the DLL's lifetime. Never
+free it or return a temporary string's c_str() to the engine.
 
-Votre adaptateur associe les identifiants stables des ressources du mod aux
-clés du catalogue, fournit le texte selon le contrat du moteur (UTF-8,
-longueur et durée de vie), et laisse passer les identifiants des autres mods
-et du jeu. Il doit tenir compte d'un changement de langue sans conserver
-définitivement le premier texte résolu. Les adresses natives dépendent de la
-version du jeu : aucun offset universel n'est fourni par le SDK.
+ABI 1 exposes neither GetLanguage nor a text-registration service. The header
+does not detect language. Obtain nativeLanguageId from the actual game text
+service through your validated native adapter, not from Windows/Steam locale.
+The sample is a catalogue, not a ready-made engine adapter.
 
-3. Compiler, distribuer, vérifier
+Map stable mod resource IDs to catalogue keys, satisfy the engine's UTF-8,
+length and lifetime requirements, and forward unrelated game/mod IDs unchanged.
+Account for language changes rather than caching the first resolved translation
+forever. Native addresses depend on the client build; the SDK supplies no
+universal offsets.
 
-Compiler les sources UTF-8 avec /utf-8 (MSVC). Le header public C ABI reste
-include/enshrouded_mod.h ; include/enshrouded_i18n.h est une aide C++17 optionnelle.
-Livrer la DLL et son manifeste ensemble. Annoncer chargeur >= 0.6.10 dans les
-prérequis : les anciens chargeurs refusent les lignes text. Il n'existe pas
-de champ min_loader_version dans le manifeste V1. Ne pas en inventer un.
+3. Build, distribute and verify
 
-Depuis la racine du dépôt du chargeur :
+Compile UTF-8 sources with MSVC /utf-8. The public C ABI header remains
+include/enshrouded_mod.h; include/enshrouded_i18n.h is optional C++17 support.
+Ship the DLL and its manifest together. Document ModLoader >= 0.6.10 if using
+text entries. There is no min_loader_version field in manifest V1.
+
+From the loader repository root:
   build.cmd
   build-sdk.cmd
   test-mod-i18n.cmd
-  build\validate_mod_package.exe CHEMIN_PAQUET auteur/mon_mod.dll
-CHEMIN_PAQUET contient le sous-dossier Mods, pas directement la DLL.
-Le validateur vérifie aussi les traductions sans exécuter votre DLL.
+  build\validate_mod_package.exe PACKAGE_ROOT author/my_mod.dll
+PACKAGE_ROOT contains Mods, not the DLL directly. The validator checks settings
+translations without executing the mod DLL.
 
-En jeu : vérifier français et anglais, une traduction manquante, les choix
-et booléens, l'affichage des accents, et deux mondes ayant des configurations
-différentes. Changer de langue ne doit pas changer les valeurs sauvegardées.
-Vérifier séparément les textes d'objets, leur inventaire et leur recette :
-la validation du manifeste ne prouve pas le raccordement des ressources natives.
+In-game, test multiple languages, missing-translation fallback, choices,
+booleans, accents, native item text and worlds with different settings.
+Changing language must never change the saved values.
+
+4. Require full catalogue coverage at build time (SDK 0.6.11)
+
+From your mod repository root:
+  powershell -NoProfile -ExecutionPolicy Bypass -File sdk/tools/compile-translations.ps1 -Catalog assets/localization/texts.json -Output src/mod_texts.h -Symbol ModTexts
+
+The UTF-8 JSON root contains one object per language code. Each object contains
+key/value pairs such as {"item.name":"...","item.description":"..."}.
+Provide exactly the 15 game languages above and the same keys in every language.
+English fallback never counts as coverage. Values must be nonempty, no longer
+than 4,096 UTF-8 bytes, and free of control characters except line feeds.
+Preserve <b></b> markup and named placeholders such as {name}. The stricter
+manifest limits (100 bytes per value, 16 KiB total) still apply to manifest text.
+
+Include enshrouded_i18n.h before the generated header. Stop the build if the
+script fails. Track the source JSON, generated header and compiler script.
+Edit the JSON, not the generated header. The compiler neither translates missing
+phrases automatically nor installs files or changes the ABI.
+
+supportedLanguages lists the 15 actual native IDs. Do not iterate from 0 to 14.
+code()/validCode() recognize 35 engine codes, including regional variants and
+languages not offered by this client. Fallback remains useful for those codes.
+
+The test helper tests/catalog_checks.h verifies exact coverage and fallback
+without launching the game. A non-null find() result does not prove a language
+has its own translation: the result may be English fallback. The negative tests
+in tests/compile-translations.tests.ps1 reject missing languages/keys, empty
+text, changed markup/placeholders, invalid controls and malformed UTF-8.
+
+Translations also need linguistic review and visual checks in the game for
+fonts, width and line wrapping.

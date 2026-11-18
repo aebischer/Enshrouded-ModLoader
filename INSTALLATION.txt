@@ -1,0 +1,46 @@
+ENSHROUDED MODLOADER 0.6.11 — WINDOWS X64
+Development build — no compiler required for the release ZIP
+
+1. Close Enshrouded and back up your saves.
+2. Extract the ENTIRE release ZIP into a folder. Keep Install.cmd, install.ps1
+   and dist/dinput8.dll together. Do not run the installer inside the ZIP viewer.
+3. Run Install.cmd. It detects Steam's game directory or asks for the folder
+   containing enshrouded.exe. Wait for the installation/verification message.
+4. Install compatible mods separately under the game's Mods directory.
+5. Start Enshrouded, open Edit -> MODS for the chosen world, enable the mods
+   and configure them before starting that world.
+
+Custom directory, from PowerShell in the extracted folder:
+powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -GamePath "D:\SteamLibrary\steamapps\common\Enshrouded"
+
+Installed layout:
+Enshrouded/
+  enshrouded.exe
+  dinput8.dll
+  Mods/                         separately installed mods
+  ModLoader/mod-loader.log      diagnostics
+  ModLoader/worlds/             per-world activation/settings
+  RandomWorld/                  installer receipts/recovery (historical name)
+
+The loader package does not include gameplay mods or test fixtures.
+
+UPDATE: close the game, extract the new package and run Install.cmd. Profiles
+are preserved. An unrelated dinput8.dll is not overwritten. If another loader
+is detected, do not force replacement. Only one proxy can occupy this path.
+
+UNINSTALL: close the game and run Uninstall.cmd. Profiles, logs and mod files
+remain. Check a mod's removal requirements before loading a save without it.
+
+COMPATIBILITY: Windows x64 client, enshrouded.exe SHA-256:
+5D9EF2F140B8ED49E30DBEE655841B89D08BAEC20F799A1817E171A18A850C77
+The installer refuses other executables. Dedicated servers and multiplayer
+are not certified. Changed mods/settings may require a complete restart;
+DLLs are not hot-unloaded.
+
+The in-game interface supports all 15 game languages. This documentation and
+the installer use English. SHA256SUMS.txt in release packages lists file hashes
+for verification with Get-FileHash.
+
+Source, documentation and private downloads:
+https://github.com/aebischer/Enshrouded-ModLoader
+An authorized GitHub account is required.

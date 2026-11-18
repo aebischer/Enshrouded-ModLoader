@@ -1,78 +1,72 @@
-Référence normative commune : [standard V1 du SDK](../sdk/STANDARD_V1.txt). Ce document complète le standard avec des notes de fonctionnement.
+# Per-world mod settings
 
-# Paramètres des mods — 0.6.2
+The normative contract is [SDK V1](../sdk/STANDARD_V1.txt). This document explains
+storage and UI behavior in ModLoader 0.6.11.
 
-Le manifeste `.dll.mod` déclare le schéma, sans exécuter de code dans le menu :
+A `.dll.mod` manifest declares settings without executing DLL code in the menu:
 
 ```ini
-setting=messages|bool|Messages de test|true
-setting=effects|bool|Effets de test|false
-setting=intensity|percent|Intensité de test|100|0|200|25
-setting=mode|choice|Mode de test|Normal|Calme|Normal|Rapide
+setting=messages|bool|Test messages|true
+setting=effects|bool|Test effects|false
+setting=intensity|percent|Test intensity|100|0|200|25
+setting=mode|choice|Test mode|normal|slow|normal|fast
 ```
 
-Ordre : clé, type, libellé, défaut, puis choix autorisés pour `choice`.
-Les clés sont uniques, en minuscules/chiffres/underscore (40 caractères max).
-Maximum 16 paramètres, 2 à 8 choix distincts pour une liste, 100 octets par
-champ ; booléens stricts `true`/`false`. UTF-8 invalide et schémas incohérents
-sont refusés. Les bibliothèques ne déclarent pas de paramètres.
+Fields are key, type, label, default, then allowed values for choices.
+Keys are unique `[a-z0-9_]`, at most 40 characters. Limits: 16 settings,
+2–8 distinct choices, 100 bytes per field, strict `true`/`false` booleans.
+Invalid UTF-8 and inconsistent schemas are rejected. Libraries cannot declare settings.
 
-Depuis 0.6.1, le panneau emploie les composants natifs de difficulté : ligne
-sélectionnable, surbrillance, libellé à gauche, valeur centrée entre les flèches.
-Les booléens affichent Désactivé/Activé. Les autres choix utilisent la même
-ligne, avec flèches masquées aux extrémités. La zone de défilement native remplace
-la pagination des paramètres et reprend la barre dorée du jeu. Les valeurs
-sont enregistrées à chaque changement ; Actualiser relit les fichiers.
+The UI uses native difficulty components: selectable rows, hover highlighting,
+labels on the left and values between arrows. Booleans display localized
+Disabled/Enabled. Choice arrows disappear at endpoints. Native scrolling uses
+the game's gold scrollbar. Selectors save on change; percentage sliders save
+on release. Refresh reloads the files.
 
-Chaque couple GUID de monde / identifiant de mod a son propre fichier :
-`ModLoader/worlds/<GUID>.settings/<chemin-du-mod.dll>.ini`.
-Fichier absent = valeurs par défaut ; un fichier présent mais invalide bloque
-le chargement au lieu d’être ignoré. Lecture limitée à 16 Kio, validation des
-valeurs, verrou exclusif, comparaison avec la dernière version lue, temporaire
-unique vidé sur disque puis remplacement atomique. Les paramètres persistent
-lorsque le mod est désactivé. Supprimer son fichier puis Actualiser restaure
-ses défauts. Le profil d’activation `.mods` est indépendant.
+Percentages use integer default/min/max/step values from 0 to 10000. The step
+must divide the range, the default must lie on a step, and there must be 2–32
+positions. The native slider receives a ratio; storage retains the integer
+percentage. Missing newly added keys use their defaults without changing others.
+The native `c3a` flag enables selector arrows (introduced in 0.6.2).
 
-Les mods déclarant des paramètres doivent exporter
-`int EnshroudedModConfigure(const char* world_id, const char* settings_utf8)`
-avec liaison C. Le chargeur vérifie l’export dans le PE, prépare/valide tous les
-paramètres avant de charger la première DLL, appelle Configure puis Initialize.
-Le texte transmis est trié, sous forme de lignes `clé=valeur`, défauts inclus.
-Retour 1 attendu ; copier les pointeurs pour les conserver après cet appel.
-La structure de contexte ABI 1 reste inchangée pour les mods existants.
+## Storage
 
-Une configuration différente de celle d’un mod résident impose une relance.
-Rétablir exactement les valeurs chargées supprime ce besoin. Pas d’application
-à chaud. Test_A et Test_B ne font qu’écrire leurs valeurs et le GUID dans le
-journal du chargeur : les options « effets », « couleur » et « mode » servent
-à tester la configuration, sans effet sur les sauvegardes ou le gameplay.
+Current path:
+`ModLoader/worlds/<GUID>.settings-v2/<SHA256-normalized-UTF8-mod-id>.ini`.
+The digest is 64 lowercase hexadecimal characters. Content remains
+`ENSHROUDED_SETTINGS_V1`. Legacy `<GUID>.settings/<mod-path.dll>.ini` files are
+moved under locks on first read without overwriting an existing destination.
+Migration errors leave settings available for retry; corrupt data remains an
+error rather than silently becoming defaults.
 
-Tests automatisés : séparation de deux mondes et deux DLL, défauts, oui/non,
-choix autorisés, valeurs invalides, conflits d’écriture, conservation quand
-le mod est désactivé, sauvegarde immédiate, relance et annulation du besoin de
-relance, deux processus frais recevant des valeurs distinctes, configuration
-corrompue refusée avant toute exécution et schéma avec doublon refusé.
-Les contrôles natifs eux-mêmes restent à vérifier visuellement dans le jeu.
+Each world/mod pair has independent settings. Missing file = defaults; present
+but invalid file = launch refusal. Reads are bounded to 16 KiB and values are
+validated. Writes use an exclusive lock, compare against the last read state,
+flush a unique temporary file, then replace atomically. Disabled mods keep their
+settings. Deleting a settings file and refreshing restores defaults. Activation
+profiles `.mods` are independent.
 
-Pour transférer un monde avec ses réglages, copier le profil `.mods` ET le
-dossier `<GUID>.settings`. Le paquet de transfert d’activation existant reste
-limité au `.mods` ; il ne doit pas être présenté comme une exportation de ces
-nouveaux paramètres.
+Back up the entire `ModLoader/worlds` directory. The activation-profile transfer
+utility transports only `.mods`, not settings, save data or DLLs.
 
-Depuis 0.6.2, `percent` déclare défaut, minimum, maximum et pas, sous forme
-d’entiers de 0 à 10000. Le pas doit diviser la plage, le défaut doit être sur
-une graduation, et la plage doit avoir 2 à 32 graduations. Le jeu reçoit un
-ratio pour son curseur natif ; le fichier conserve le pourcentage entier.
-La valeur est enregistrée au relâchement. Une nouvelle clé absente d’un ancien
-fichier prend sa valeur par défaut sans modifier les autres réglages.
-Correction 0.6.2 : le drapeau natif `c3a` autorise les flèches des sélecteurs.
+## Initialization and restart
 
-## Stockage depuis 0.6.9
+Mods with settings must export C-linked
+`int EnshroudedModConfigure(const char* world_id, const char* settings_utf8)`.
+The loader validates the PE export and all settings before loading the first
+DLL, then calls Configure followed by Initialize. Configure receives sorted
+`key=value` lines, including defaults. It must return 1 and copy borrowed data
+if retaining it. ABI 1 context layout is unchanged.
 
-Le chemin actuel est `<GUID>.settings-v2/<SHA256(id UTF-8 normalis�)>.ini`.
-Le format du contenu reste ENSHROUDED_SETTINGS_V1. Le hachage utilise 64 caract�res
-hexad�cimaux minuscules. La migration automatique d�place les anciens `.ini` sous
-verrous, sans �craser un fichier d�j� pr�sent. Une erreur de migration est affich�e
-et laisse les r�glages en place pour un nouvel essai. Un ancien fichier corrompu
-reste invalide apr�s migration : il n�est pas remplac� silencieusement par des d�fauts.
-Copier le dossier worlds complet pour une sauvegarde ou un transfert manuel.
+Different settings for a resident mod require restarting. Restoring the exact
+loaded values removes this requirement. Settings are not applied live.
+Test_A/Test_B merely log configuration and world IDs; their settings have no
+gameplay effects and the fixtures are not installed in player packages.
+
+Tests cover world/mod isolation, defaults, supported types, invalid values,
+write conflicts, disabled-mod persistence, immediate saves, restart/reversion,
+fresh processes with different settings, corrupted configuration and duplicate
+schema rejection. Native control appearance still requires visual game testing.
+
+All custom loader labels and errors follow the selected game language. See
+[localization](../sdk/LOCALISATION.txt); saved keys and values are never translated.

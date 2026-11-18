@@ -1,27 +1,31 @@
-Orientation à conserver — multijoueur et serveurs — 13 novembre 2026
+MULTIPLAYER AND SERVER DIRECTION — recorded November 13, 2026
 
-Décisions discutées avec Alain, à reprendre lors du développement multijoueur.
-Cette note décrit une orientation future, pas des fonctionnalités déjà réalisées.
+These are future design decisions discussed with Alain, not implemented features.
 
-État actuel
-- Le chargeur 0.6.9 cible le client et ses menus, avec activation et paramètres par monde local.
-- La connexion distante est bloquée lorsque des mods locaux sont résidents ou qu'un chargement a échoué partiellement.
-- Héberger depuis le client ne garantit pas la compatibilité des mods avec les invités.
-- Un serveur dédié demande une intégration distincte, avec configuration sans interface graphique. Sa faisabilité et les points d'intégration restent à étudier.
+Current state
+- The loader targets the client/menu, with activation and settings per local world.
+- Remote joining is blocked with resident local mods or a partially failed load.
+- Hosting through the client does not establish compatibility with guests.
+- Dedicated servers need separate integration and headless configuration;
+  feasibility and native integration points remain to be investigated.
 
-Architecture à privilégier
-- Le serveur fait autorité pour les actions et les paramètres qui affectent le monde partagé.
-- La configuration appartient au monde du serveur. Seuls l'hôte ou les administrateurs autorisés la modifient ; les clients peuvent la consulter.
-- Prévoir une vérification à la connexion des mods requis et des versions compatibles, avec un message clair en cas d'incompatibilité.
-- Déterminer pour chaque mod ce qui doit être installé côté serveur, côté client ou des deux côtés. Installer les mêmes DLL partout ne suffit pas à synchroniser les actions.
+Preferred architecture
+- The server is authoritative for actions/settings affecting the shared world.
+- Configuration belongs to the server world. Only the host/authorized admins
+  may edit it; clients may inspect it.
+- Check required mods and compatible versions at connection time, with clear
+  incompatibility messages.
+- Define whether each mod is required on server, client or both. Installing
+  identical DLLs everywhere does not automatically synchronize actions.
 
-Cas CarryOn : commencer par les coffres avec leur contenu
-- Le client demande de prendre ou déposer un coffre ; le serveur valide et applique l'action.
-- Le serveur contrôle les droits, les conditions de prise et de dépôt et l'état du coffre.
-- Empêcher deux joueurs de prendre le même coffre simultanément.
-- Préserver le contenu et éviter toute duplication ou perte lors des transferts.
-- Synchroniser l'état et l'affichage vers les clients concernés.
-- Définir et tester les cas de déconnexion, mort du porteur et redémarrage du serveur.
+CarryOn: start with chests and their contents
+- The client requests pickup or placement; the server validates and commits it.
+- Validate permissions, pickup/placement conditions and current chest state.
+- Prevent two players from claiming the same chest simultaneously.
+- Preserve contents without duplication or loss during transfers.
+- Replicate state and visuals to relevant clients.
+- Define and test disconnects, carrier death and server restarts.
 
-Suite
-Conserver ces contraintes dans la conception du chargeur et de CarryOn, sans lancer maintenant un chantier serveur. Avant de promettre une compatibilité multijoueur, vérifier les mécanismes natifs et réaliser des tests avec hôte, invités et serveur dédié.
+Keep these constraints in the loader and CarryOn design. Do not claim multiplayer
+support before investigating native mechanisms and testing a host, guests and
+a dedicated server. This note does not start server implementation.

@@ -4,6 +4,8 @@ cd /d "%~dp0"
 call "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
 if errorlevel 1 exit /b 1
 if not exist build mkdir build
+powershell -NoProfile -ExecutionPolicy Bypass -File sdk\tools\compile-translations.ps1 -Catalog assets\localization\loader.json -Output src\loader_texts.h -Symbol LoaderTexts
+if errorlevel 1 exit /b 1
 if not exist dist mkdir dist
 pushd build
 cl /nologo /c /O2 /MT /I..\third_party\minhook\include ..\third_party\minhook\src\buffer.c ..\third_party\minhook\src\hook.c ..\third_party\minhook\src\trampoline.c ..\third_party\minhook\src\hde\hde64.c

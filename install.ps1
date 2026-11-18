@@ -1,4 +1,4 @@
-param([string]$GamePath, [switch]$Uninstall)
+﻿param([string]$GamePath, [switch]$Uninstall)
 $ErrorActionPreference = 'Stop'
 $expected = '5D9EF2F140B8ED49E30DBEE655841B89D08BAEC20F799A1817E171A18A850C77'
 if (-not $GamePath) {
@@ -10,13 +10,13 @@ if (-not $GamePath) {
         $roots += [regex]::Matches((Get-Content -LiteralPath $vdf -Raw), '"path"\s+"([^"]+)"') | ForEach-Object { $_.Groups[1].Value.Replace('\\','\') }
     }
     $GamePath = $roots | Select-Object -Unique | ForEach-Object { Join-Path $_ 'steamapps\common\Enshrouded' } | Where-Object { Test-Path -LiteralPath (Join-Path $_ 'enshrouded.exe') } | Select-Object -First 1
-    if (-not $GamePath) { $GamePath = Read-Host 'Dossier contenant enshrouded.exe' }
+    if (-not $GamePath) { $GamePath = Read-Host 'Folder containing enshrouded.exe' }
 }
 $GamePath = (Resolve-Path -LiteralPath $GamePath).Path
 $exe = Join-Path $GamePath 'enshrouded.exe'
-if (-not (Test-Path -LiteralPath $exe)) { throw 'Enshrouded.exe introuvable.' }
+if (-not (Test-Path -LiteralPath $exe)) { throw 'Enshrouded.exe was not found.' }
 foreach ($running in @(Get-Process enshrouded -ErrorAction SilentlyContinue)) {
-    if (-not $running.Path -or $running.Path -eq $exe) { throw 'Fermez Enshrouded avant de continuer.' }
+    if (-not $running.Path -or $running.Path -eq $exe) { throw 'Close Enshrouded before continuing.' }
 }
 $dll = Join-Path $GamePath 'dinput8.dll'
 $data = Join-Path $GamePath 'RandomWorld'
@@ -28,12 +28,12 @@ $previous = Join-Path $data 'install.previous.dll'
 function Restore-PendingInstall {
     if (-not (Test-Path -LiteralPath $pending)) { return }
     $record = Get-Content -LiteralPath $pending -Raw | ConvertFrom-Json
-    if ($record.newHash -notmatch '^[A-F0-9]{64}$' -or ($record.oldHash -and $record.oldHash -notmatch '^[A-F0-9]{64}$')) { throw 'Journal de restauration invalide.' }
+    if ($record.newHash -notmatch '^[A-F0-9]{64}$' -or ($record.oldHash -and $record.oldHash -notmatch '^[A-F0-9]{64}$')) { throw 'Invalid recovery journal.' }
     $current = if (Test-Path -LiteralPath $dll -PathType Leaf) { (Get-FileHash -LiteralPath $dll).Hash } else { '' }
-    if ($current -and $current -ne $record.newHash -and $current -ne $record.oldHash) { throw 'La DLL a change pendant une installation interrompue. Restauration refusee.' }
+    if ($current -and $current -ne $record.newHash -and $current -ne $record.oldHash) { throw 'The DLL changed during an interrupted installation. Recovery refused.' }
     if ($record.oldHash) {
         if ($current -ne $record.oldHash) {
-            if (-not (Test-Path -LiteralPath $previous -PathType Leaf) -or (Get-FileHash -LiteralPath $previous).Hash -ne $record.oldHash) { throw 'Copie de restauration absente ou alteree.' }
+            if (-not (Test-Path -LiteralPath $previous -PathType Leaf) -or (Get-FileHash -LiteralPath $previous).Hash -ne $record.oldHash) { throw 'Recovery copy is missing or altered.' }
             Copy-Item -LiteralPath $previous -Destination $dll -Force
         }
         # If the old receipt is already correct (possibly locked), no rewrite is needed.
@@ -48,17 +48,17 @@ function Restore-PendingInstall {
 }
 function Assert-LoaderBinary([byte[]]$bytes) {
     function Need([long]$offset,[long]$count) {
-        if($offset -lt 0 -or $count -lt 0 -or $offset -gt $bytes.Length -or $count -gt $bytes.Length-$offset) {throw 'DLL tronquee ou table PE invalide.'}
+        if($offset -lt 0 -or $count -lt 0 -or $offset -gt $bytes.Length -or $count -gt $bytes.Length-$offset) {throw 'Truncated DLL or invalid PE table.'}
     }
     function U16([long]$offset) {Need $offset 2; return [BitConverter]::ToUInt16($bytes,[int]$offset)}
     function U32([long]$offset) {Need $offset 4; return [BitConverter]::ToUInt32($bytes,[int]$offset)}
     Need 0 64
-    if((U16 0) -ne 0x5a4d){throw 'DLL source invalide.'}
+    if((U16 0) -ne 0x5a4d){throw 'Invalid source DLL.'}
     $pe=[long](U32 60)
     Need $pe 264
-    if((U32 $pe) -ne 0x4550 -or (U16 ($pe+4)) -ne 0x8664 -or ((U16 ($pe+22)) -band 0x2000) -eq 0 -or (U16 ($pe+24)) -ne 0x20b -or (U16 ($pe+20)) -ne 240){throw 'Le chargeur doit etre une DLL PE32+ x64.'}
+    if((U32 $pe) -ne 0x4550 -or (U16 ($pe+4)) -ne 0x8664 -or ((U16 ($pe+22)) -band 0x2000) -eq 0 -or (U16 ($pe+24)) -ne 0x20b -or (U16 ($pe+20)) -ne 240){throw 'The loader must be an x64 PE32+ DLL.'}
     $count=U16 ($pe+6)
-    if($count -lt 1 -or $count -gt 96 -or (U32 ($pe+132)) -lt 16){throw 'Tables PE invalides.'}
+    if($count -lt 1 -or $count -gt 96 -or (U32 ($pe+132)) -lt 16){throw 'Invalid PE tables.'}
     $sections=@()
     for($i=0;$i -lt $count;$i++) {
         $o=$pe+264+40*$i; Need $o 40
@@ -70,13 +70,13 @@ function Assert-LoaderBinary([byte[]]$bytes) {
             $delta=$rva-$section.rva
             if($delta -ge 0 -and $delta -lt $section.size -and $length -le $section.size-$delta) {Need ($section.raw+$delta) $length; return ($section.raw+$delta)}
         }
-        throw 'RVA PE invalide.'
+        throw 'Invalid PE RVA.'
     }
     $exports=[long](U32 ($pe+136)); $exportSize=[long](U32 ($pe+140))
-    if($exports -eq 0 -or $exportSize -lt 40){throw 'Exports du chargeur absents.'}
+    if($exports -eq 0 -or $exportSize -lt 40){throw 'Loader exports are missing.'}
     $e=Offset $exports 40
     $functions=[long](U32 ($e+20)); $names=[long](U32 ($e+24))
-    if($functions -lt 6 -or $functions -gt 65536 -or $names -lt 6 -or $names -gt 65536){throw 'Exports du chargeur invalides.'}
+    if($functions -lt 6 -or $functions -gt 65536 -or $names -lt 6 -or $names -gt 65536){throw 'Invalid loader exports.'}
     $f=Offset (U32 ($e+28)) ($functions*4)
     $n=Offset (U32 ($e+32)) ($names*4)
     $ord=Offset (U32 ($e+36)) ($names*2)
@@ -87,48 +87,48 @@ function Assert-LoaderBinary([byte[]]$bytes) {
         for($j=0;$j -lt 256;$j++) {
             $c=$bytes[(Offset ($nameRva+$j) 1)]
             if($c -eq 0){$ended=$true;break}
-            if($c -lt 32 -or $c -gt 126){throw 'Nom export invalide.'}
+            if($c -lt 32 -or $c -gt 126){throw 'Invalid export name.'}
             $name += [char]$c
         }
-        if(-not $ended){throw 'Nom export trop long.'}
+        if(-not $ended){throw 'Export name is too long.'}
         if($required -ccontains $name) {
-            if($found.ContainsKey($name)){throw 'Export duplique.'}
+            if($found.ContainsKey($name)){throw 'Duplicate export.'}
             $index=U16 ($ord+2*$i)
-            if($index -ge $functions){throw 'Ordinal invalide.'}
+            if($index -ge $functions){throw 'Invalid ordinal.'}
             $address=[long](U32 ($f+4*$index))
-            if($address -ge $exports -and $address -lt $exports+$exportSize){throw 'Export redirige interdit pour le chargeur.'}
+            if($address -ge $exports -and $address -lt $exports+$exportSize){throw 'Forwarded exports are not allowed for the loader.'}
             $null=Offset $address 1
             $executable=$false
             foreach($section in $sections){if($address -ge $section.rva -and $address -lt $section.rva+$section.virtual -and ($section.flags -band 0x20000000)){$executable=$true}}
-            if(-not $executable){throw 'Export non executable.'}
+            if(-not $executable){throw 'Export is not executable.'}
             $found[$name]=$true
         }
     }
-    foreach($name in $required){if(-not $found.ContainsKey($name)){throw "Export du chargeur absent : $name"}}
+    foreach($name in $required){if(-not $found.ContainsKey($name)){throw "Missing loader export: $name"}}
 }
 try {
 Restore-PendingInstall
 if ($Uninstall) {
-    if (-not (Test-Path -LiteralPath $receipt)) { throw 'Installation de ce prototype non identifiee.' }
+    if (-not (Test-Path -LiteralPath $receipt)) { throw 'No recognized installation receipt was found.' }
     if (Test-Path -LiteralPath $dll) {
-        if ((Get-FileHash -LiteralPath $dll).Hash -ne (Get-Content -LiteralPath $receipt -Raw).Trim()) { throw 'La DLL a change : desinstallation automatique refusee.' }
+        if ((Get-FileHash -LiteralPath $dll).Hash -ne (Get-Content -LiteralPath $receipt -Raw).Trim()) { throw 'The DLL has changed: automatic removal refused.' }
         Remove-Item -LiteralPath $dll
     }
     Remove-Item -LiteralPath $receipt
-    Write-Host 'Mod retire. Journaux et sauvegardes conserves.'
+    Write-Host 'Loader removed. Logs and saved data preserved.'
     exit
 }
-if ((Get-FileHash -LiteralPath $exe).Hash -ne $expected) { throw 'Version du jeu non prise en charge par ce prototype.' }
+if ((Get-FileHash -LiteralPath $exe).Hash -ne $expected) { throw 'This game version is not supported by this build.' }
 if (Test-Path -LiteralPath $dll) {
-    if (-not (Test-Path -LiteralPath $receipt)) { throw 'Un autre dinput8.dll est present. Aucun fichier remplace.' }
-    if ((Get-FileHash -LiteralPath $dll).Hash -ne (Get-Content -LiteralPath $receipt -Raw).Trim()) { throw 'Conflit : DLL differente de notre installation.' }
+    if (-not (Test-Path -LiteralPath $receipt)) { throw 'Another dinput8.dll is present. No file was replaced.' }
+    if ((Get-FileHash -LiteralPath $dll).Hash -ne (Get-Content -LiteralPath $receipt -Raw).Trim()) { throw 'Conflict: DLL differs from the managed installation.' }
 }
 foreach ($other in @('powrprof.dll','dbghelp.dll')) {
-    if (Test-Path -LiteralPath (Join-Path $GamePath $other)) { throw "Autre chargeur present ($other). Integration a verifier." }
+    if (Test-Path -LiteralPath (Join-Path $GamePath $other)) { throw "Another loader is present ($other). Integration must be checked." }
 }
 $source = Join-Path $PSScriptRoot 'dist\dinput8.dll'
-if (-not (Test-Path -LiteralPath $source)) { throw 'Compilez le projet avant installation.' }
-if (Test-Path -LiteralPath $receipt -PathType Container) { throw 'Le recu est un dossier. Installation non modifiee.' }
+if (-not (Test-Path -LiteralPath $source)) { throw 'Source DLL missing. Build the project or extract the complete release ZIP.' }
+if (Test-Path -LiteralPath $receipt -PathType Container) { throw 'The receipt path is a directory. Installation was not changed.' }
 New-Item -ItemType Directory -Path (Join-Path $GamePath 'Mods') -Force | Out-Null
 $transactionId = [guid]::NewGuid().ToString('N')
 $stagedDll = Join-Path $GamePath ('dinput8.' + $transactionId + '.new')
@@ -137,20 +137,20 @@ $stagedPending = Join-Path $data ('pending.' + $transactionId + '.new')
 try {
     Copy-Item -LiteralPath $source -Destination $stagedDll
     $newHash = (Get-FileHash -LiteralPath $stagedDll).Hash
-    if ($newHash -ne (Get-FileHash -LiteralPath $source).Hash) { throw 'Verification de la copie echouee.' }
-    if((Get-Item -LiteralPath $stagedDll).Length -gt 128MB){throw 'DLL source trop volumineuse.'}
+    if ($newHash -ne (Get-FileHash -LiteralPath $source).Hash) { throw 'Copied file verification failed.' }
+    if((Get-Item -LiteralPath $stagedDll).Length -gt 128MB){throw 'Source DLL is too large.'}
     Assert-LoaderBinary ([IO.File]::ReadAllBytes($stagedDll))
     [IO.File]::WriteAllText($stagedReceipt, $newHash, [Text.Encoding]::ASCII)
     $oldHash = if (Test-Path -LiteralPath $dll) { (Get-FileHash -LiteralPath $dll).Hash } else { '' }
     if ($oldHash) {
         Copy-Item -LiteralPath $dll -Destination $previous -Force
-        if ((Get-FileHash -LiteralPath $previous).Hash -ne $oldHash) { throw 'Sauvegarde de restauration invalide.' }
+        if ((Get-FileHash -LiteralPath $previous).Hash -ne $oldHash) { throw 'Invalid recovery backup.' }
     }
     @{newHash=$newHash; oldHash=$oldHash} | ConvertTo-Json -Compress | Set-Content -LiteralPath $stagedPending -Encoding ASCII
     [IO.File]::Move($stagedPending, $pending)
     if ($oldHash) { [IO.File]::Replace($stagedDll, $dll, ($stagedDll + '.old')) } else { [IO.File]::Move($stagedDll, $dll) }
     if (Test-Path -LiteralPath $receipt) { [IO.File]::Replace($stagedReceipt, $receipt, ($stagedReceipt + '.old')) } else { [IO.File]::Move($stagedReceipt, $receipt) }
-    if ((Get-FileHash -LiteralPath $dll).Hash -ne $newHash -or (Get-Content -LiteralPath $receipt -Raw).Trim() -ne $newHash) { throw 'Verification finale echouee.' }
+    if ((Get-FileHash -LiteralPath $dll).Hash -ne $newHash -or (Get-Content -LiteralPath $receipt -Raw).Trim() -ne $newHash) { throw 'Final verification failed.' }
     Remove-Item -LiteralPath $pending
 } catch {
     $installError = $_
@@ -161,5 +161,5 @@ try {
         if (Test-Path -LiteralPath $tempFile -PathType Leaf) { Remove-Item -LiteralPath $tempFile -ErrorAction SilentlyContinue }
     }
 }
-Write-Host "Chargeur 0.6.10 installe et verifie dans $GamePath."
+Write-Host "ModLoader 0.6.11 installed and verified in $GamePath."
 } finally { $installLock.Dispose() }

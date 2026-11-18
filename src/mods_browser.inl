@@ -62,9 +62,9 @@ static bool nativeBackAction(NativeFrame& frame) {
 
 static const char* catalogState(const std::string& id) {
     const auto& info=catalog.at(id);
-    if(info.library) return requiredLibraries.count(id)?"Bibliotheque requise (chargement automatique)":"Bibliotheque non utilisee";
-    if(isEnabled(id)) return "Active pour ce monde";
-    return info.valid?"Desactive pour ce monde":"Incompatible ou manifeste absent";
+    if(info.library) return requiredLibraries.count(id)?loaderText("state.library_required"):loaderText("state.library_unused");
+    if(isEnabled(id)) return loaderText("state.on");
+    return info.valid?loaderText("state.off"):loaderText("state.invalid");
 }
 struct NativeScreenLifetime {
     void* window; void* backdrop; bool windowReady=false,backdropReady=false;
@@ -124,9 +124,9 @@ static void renderModsPage() {
         screen.width(browserWidth); screen.stretch(0,1); screen.align(0x202);
         {
             NativeFrame header("ModsBrowserHeader",true,20); header.stretch(1,0);
-            pageLabel("MODS",true);
+            pageLabel(loaderText("ui.title"),true);
             {NativeFrame spacer("HeaderSpacer"); spacer.stretch(1,0);}
-            const auto count=std::to_string(modFiles.size())+" fichier(s) reference(s)";
+            const auto count=std::string(loaderText("ui.files"))+": "+std::to_string(modFiles.size());
             pageLabel(count.c_str());
         }
         {
@@ -137,8 +137,8 @@ static void renderModsPage() {
                 if(modFiles.empty()) {
                     NativeFrame empty("EmptyModList",false,16); empty.stretch(1,1);
                     empty.padding(24,30); empty.panel();
-                    pageLabel("Aucun mod install\xc3\xa9");
-                    pageLabel("Les mods disponibles appara\xc3\xaetront ici.");
+                    pageLabel(loaderText("ui.empty"));
+                    pageLabel(loaderText("ui.available"));
                 } else {
                     for(size_t i=modPage*6;i<modFiles.size() && i<(modPage+1)*6;++i) modListEntry(i);
                 }
@@ -155,40 +155,40 @@ static void renderModsPage() {
                     {
                         NativeFrame header("ModDetailHeader",true,20); header.stretch(1,0);
                         {NativeFrame title("ModDetailTitle"); title.stretch(1,0); pageLabel(shortName.c_str(),true);}
-                        if(browserAction("ToggleMod",enabled?"D\xc3\xa9sactiver":"Activer",profileError.empty() && (enabled || (info.valid && !info.library)))) {
+                        if(browserAction("ToggleMod",enabled?loaderText("ui.disable"):loaderText("ui.enable"),profileError.empty() && (enabled || (info.valid && !info.library)))) {
                             toggleMod(file); updatePlanPreview();
                         }
                     }
-                    const auto metadata=file+(info.version.empty()?std::string{}:"    |    Version "+info.version);
+                    const auto metadata=file+(info.version.empty()?std::string{}:std::string("    |    ")+loaderText("ui.version")+" "+info.version);
                     pageLabel(metadata.c_str());
                     {
                         // Declarative controls; browsing never executes the mod DLL.
                         NativeFrame settings("ModWorldSettings",false,0); settings.stretch(1,1);
                         renderNativeModSettings(file);
                     }
-                    if(!info.present) pageLabel("Fichier absent : retire ce mod ou reinstalle-le.");
+                    if(!info.present) pageLabel(loaderText("ui.missing"));
                     if(!info.error.empty()) pageLabel(info.error.c_str());
                 } else {
-                    pageLabel("D\xc3\x89TAILS DU MOD",true);
-                    pageLabel("S\xc3\xa9lectionne un mod dans la liste.");
+                    pageLabel(loaderText("ui.details"),true);
+                    pageLabel(loaderText("ui.select"));
                 }
                 if(!planError.empty()) pageLabel(planError.c_str());
                 if(!catalogError.empty()) pageLabel(catalogError.c_str());
                 if(!profileError.empty()) pageLabel(profileError.c_str());
                 if(!launchError.empty()) pageLabel(launchError.c_str());
                 if(needsRestart(selectedKey,enabledMods)) {
-                    pageLabel("RED\xc3\x89MARRAGE REQUIS");
-                    pageLabel("Quitte puis relance le jeu avant de d\xc3\xa9marrer ce monde.");
+                    pageLabel(loaderText("ui.restart"));
+                    pageLabel(loaderText("ui.restart_world"));
                 }
             }
         }
         {
             NativeFrame footer("ModsBrowserActions",true,16); footer.stretch(1,0);
-            if(browserAction("RefreshMods","Actualiser")) {openProfile(selectedKey); launchError.clear(); refreshMods();}
+            if(browserAction("RefreshMods",loaderText("ui.refresh"))) {openProfile(selectedKey); launchError.clear(); refreshMods();}
             const size_t pages=std::max(size_t(1),(modFiles.size()+5)/6);
             if(pages>1) {
-                if(browserAction("PreviousPage","Pr\xc3\xa9" "c\xc3\xa9" "dent",modPage>0)) changeModPage(modPage-1);
-                if(browserAction("NextPage","Suivant",modPage+1<pages)) changeModPage(modPage+1);
+                if(browserAction("PreviousPage",loaderText("ui.previous"),modPage>0)) changeModPage(modPage-1);
+                if(browserAction("NextPage",loaderText("ui.next"),modPage+1<pages)) changeModPage(modPage+1);
                 const auto status=std::to_string(modPage+1)+" / "+std::to_string(pages); pageLabel(status.c_str());
             }
             {NativeFrame spacer("FooterSpacer"); spacer.stretch(1,0);}

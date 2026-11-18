@@ -1,100 +1,116 @@
-# Enshrouded ModLoader 0.6.10
+# Enshrouded ModLoader 0.6.11
 
-Chargeur natif Windows x64 pour Enshrouded, avec une interface MODS intégrée
-au menu Modifier de chaque monde. Activation et paramètres sont enregistrés
-séparément pour chaque monde.
+Native Windows x64 mod loader for Enshrouded, with a **MODS** page in each
+world's **Edit** menu. Enabled mods and settings are stored separately for each world.
+This independent project is not an official Keen Games SDK.
 
-Ce projet indépendant n'est pas un SDK officiel de Keen Games.
-Pour installer sans compiler, télécharger l’archive ZIP de la
-[version compilée](https://github.com/aebischer/Enshrouded-ModLoader/releases)
-et suivre son fichier `INSTALLATION.txt`. Le dépôt étant privé, un accès GitHub
-autorisé est nécessaire pour télécharger les releases.
-Le fonctionnement sur serveur dédié reste
-à développer : voir les [décisions multijoueur](docs/server-multiplayer-decisions.txt).
+For installation without compiling, download the ZIP from
+[Releases](https://github.com/aebischer/Enshrouded-ModLoader/releases) and follow
+[INSTALLATION.txt](INSTALLATION.txt). The repository and downloads are private;
+you need an authorized GitHub account. Mods are installed separately.
 
-## Compiler
+## Install and use
 
-Installer Visual Studio 2022 Build Tools avec les outils C++ x64 et le SDK Windows.
-Les scripts actuels attendent l'installation dans
-'C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools'.
-MinHook est inclus sous sa [licence d'origine](third_party/minhook/LICENSE.txt).
+Close Enshrouded, extract the complete release ZIP, then run **Install.cmd**.
+For a custom game directory:
 
-Depuis la racine du dépôt, exécuter dans cet ordre :
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File install.ps1 -GamePath "D:\SteamLibrary\steamapps\common\Enshrouded"
+```
 
-1. `build.cmd` : produit `dist/dinput8.dll`.
-2. `build-sdk.cmd` : construit l'exemple, le validateur et les tests du SDK.
+The installer validates the x64 proxy and its exports, saves the previous
+version, and restores it if installation fails. **Uninstall.cmd** removes the
+managed proxy while preserving profiles, logs and installed mods.
 
-Les sources et les scripts sont versionnés. Les binaires compilés, fichiers du
-jeu, sauvegardes, journaux et configurations personnelles sont exclus.
+Open **Edit → MODS**, select a mod, enable it and adjust its settings. Changes
+apply when starting the world. Once DLLs have loaded, switching mods or worlds
+may require completely restarting the game. There is no hot unloading or
+automatic restart. No test mods are included in the player package.
 
-## Installer et utiliser
+Supported `enshrouded.exe` SHA-256:
 
-Fermer le jeu, puis lancer `Installer.cmd`. Pour un autre dossier de jeu,
-consulter les paramètres de `install.ps1`. L'installateur vérifie le format
-DLL x64 et les exports du proxy, conserve une version précédente et restaure
-l'état antérieur si la publication échoue. `Desinstaller.cmd` conserve les
-profils et journaux.
+```text
+5D9EF2F140B8ED49E30DBEE655841B89D08BAEC20F799A1817E171A18A850C77
+```
 
-Le chargeur prend en charge l'exécutable identifié par ce SHA-256 :
+Game updates may require a loader update. If an incompatibility warning appears,
+do not start a modded world. Dedicated-server and multiplayer support is not
+certified; see [multiplayer decisions](docs/server-multiplayer-decisions.txt).
 
-`5D9EF2F140B8ED49E30DBEE655841B89D08BAEC20F799A1817E171A18A850C77`
+## World profiles and settings
 
-Une mise à jour du jeu peut nécessiter une adaptation du chargeur. Si une
-alerte d'incompatibilité apparaît, ne pas lancer un monde moddé.
+- `ModLoader/worlds/<GUID>.mods` stores enabled mods. A missing file means no
+  enabled mods; the Enable controls are immediately available for any world.
+- `ModLoader/worlds/<GUID>.settings-v2/<SHA256-normalized-mod-id>.ini` stores a
+  mod's settings for that world, independently of whether it is enabled.
+- Deleting a file resets the corresponding choices. Invalid files cause an
+  error instead of silently reverting to defaults. Legacy `.settings` files
+  are migrated on first read without overwriting existing settings.
+- Back up the entire `ModLoader/worlds` directory with your worlds. Steam Cloud
+  does not synchronize these profiles. The `.mods` transfer utility currently
+  transfers activation profiles only, not settings, game saves or DLLs.
 
-Dans **Modifier → MODS**, sélectionner un mod, l'activer et régler ses paramètres.
-Les choix s'appliquent au lancement du monde. Après chargement de DLL, changer
-de liste ou de monde peut demander une relance complète du jeu. Il n'y a pas
-de déchargement à chaud ni de redémarrage automatique.
+## Build
 
-## Profils et paramètres
+Install Visual Studio 2022 Build Tools with C++ x64 tools and the Windows SDK.
+The root scripts currently expect:
+`C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools`.
+MinHook is included under its [original license](third_party/minhook/LICENSE.txt).
 
-- `ModLoader/worlds/<GUID>.mods` contient les activations. S'il est absent,
-  aucun mod n'est activé et les boutons Activer sont immédiatement disponibles.
-- `ModLoader/worlds/<GUID>.settings-v2/<SHA256-identifiant-mod>.ini` contient
-  les paramètres du mod pour ce monde, indépendamment de son activation.
-- Supprimer un de ces fichiers réinitialise les choix correspondants.
-  Les anciens fichiers `.settings` sont déplacés automatiquement à leur
-  première lecture, sans remplacer un fichier existant.
-- Sauvegarder tout `ModLoader/worlds` avec les mondes. Steam Cloud ne
-  synchronise pas ces profils automatiquement. L'outil de transfert des
-  profils `.mods` ne transporte pas encore les paramètres.
+Run from the repository root, stopping if any command fails:
 
-Le chargeur est distribué sans mod de test. Les DLL de test ne doivent pas
-être copiées dans le dossier `Mods` du jeu.
+```bat
+build.cmd
+build-sdk.cmd
+```
 
-## Créer un mod
+`build.cmd` produces `dist/dinput8.dll`. `build-sdk.cmd` builds the sample mod,
+package validator and SDK tests. Generated binaries, game files, saves, logs
+and personal profiles are excluded from Git.
 
-Commencer par le [tutoriel complet : créer, compiler et installer un mod](sdk/CREER_UN_MOD.md), le [guide du SDK](sdk/README.txt) et le
-[standard V1 / ABI 1](sdk/STANDARD_V1.txt), qui constitue le contrat commun.
-Le [guide multilingue](sdk/LOCALISATION.txt) explique les paramètres traduits
-et les catalogues de textes en jeu, avec des exemples français/anglais.
+## Create a mod
 
-Chaque mod fournit une DLL Windows x64, un manifeste voisin `.dll.mod` et
-les fonctions d'intégration du SDK. Un exemple compilable et un validateur
-utilisant les mêmes contrôles que le chargeur sont inclus.
+Start with the [end-to-end mod authoring guide](sdk/CREER_UN_MOD.md),
+[SDK overview](sdk/README.txt), [V1 / ABI 1 standard](sdk/STANDARD_V1.txt), and
+[localization guide](sdk/LOCALISATION.txt). These documents are in English;
+their existing filenames are retained to keep links stable.
 
-Les DLL d'autres frameworks ne sont pas automatiquement compatibles.
-Une DLL native s'exécute avec les droits du jeu : le chargeur n'est pas
-une sandbox.
+Each mod provides a Windows x64 DLL, an adjacent `.dll.mod` manifest and the
+SDK integration exports. The repository includes a compilable example and a
+validator that uses the loader's actual preflight checks. DLLs written for
+other frameworks are not automatically compatible. Native DLLs run with the
+game's permissions; this loader is not a sandbox.
 
-## Vérifications
+## Interface languages
 
-Après compilation, les scripts suivants couvrent les principaux contrôles :
+All loader text added inside the game—navigation, states, settings, errors and
+launch refusals—covers the game's 15 interface languages: English, French,
+German, Italian, Spanish, Russian, Polish, Japanese, Korean, Brazilian Portuguese,
+Thai, Turkish, Simplified Chinese, Traditional Chinese and Ukrainian.
+The selected game language controls the interface. English is the default
+language of project documentation and technical diagnostics.
 
-- `build-test-mods.cmd` : construit les fixtures Test_A et Test_B uniquement
-  dans `build/test-mods`, puis vérifie leur chargement en environnement isolé.
-  Exécuter ce script avant les tests de paramètres et de nouveaux mondes.
+The source catalogue is `assets/localization/loader.json`. The build validates
+every language and key before generating `src/loader_texts.h`.
+`test-mod-i18n.cmd` checks exact coverage; English fallback does not count as
+a translation. New translations still need visual and linguistic review in-game.
+
+## Validation
+
+After building:
+
+- `build-test-mods.cmd` builds Test_A/Test_B fixtures under `build/test-mods`
+  only. Run it before settings and new-world tests; do not install these fixtures.
 - `test-mod-catalog.cmd`, `test-mod-profiles.cmd`, `test-mod-settings.cmd`.
-- `test-new-world-profiles.cmd`, `test-mod-hardening.cmd`.
+- `test-new-world-profiles.cmd`, `test-mod-hardening.cmd`, `test-mod-i18n.cmd`.
 - `tools/audit-mod-067.cmd`, `tools/audit-mod-068.cmd`.
-- `tools/analyze-loader.cmd` : analyse statique MSVC.
-- `tools/test_install.ps1`, `tools/audit-install-format-068.ps1` :
-  tests de l'installateur dans des dossiers isolés.
+- `tools/analyze-loader.cmd` runs MSVC static analysis.
+- `tools/test_install.ps1` and `tools/audit-install-format-068.ps1` exercise
+  installation in isolated directories.
 
-Certains tests nécessitent l'exécutable local du jeu et son emplacement attendu
-sur cette machine. Ils ne constituent pas une suite portable sans adaptation.
-Le dépôt ne redistribue aucun fichier du jeu.
+Some tests require a local supported game executable or machine-specific paths.
+No game files are redistributed. Offline checks do not replace gameplay tests.
+See [localization validation](docs/localization-validation.md) for the latest results.
 
-Le fichier `.gitignore` utilise une liste explicite de fichiers publiables :
-ajouter les nouveaux fichiers de développement à cette liste avant de les versionner.
+The root `.gitignore` is an explicit publication allowlist. Add new project
+files to it before committing them.

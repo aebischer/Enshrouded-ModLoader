@@ -7,8 +7,8 @@
 !/build.cmd
 !/build-sdk.cmd
 !/build-test-mods.cmd
-!/Installer.cmd
-!/Desinstaller.cmd
+!/Install.cmd
+!/Uninstall.cmd
 !/install.ps1
 !/test-mod-catalog.cmd
 !/test-mod-hardening.cmd
@@ -94,3 +94,13 @@
 
 !/sdk/LOCALISATION.txt
 !/sdk/example/localized_texts.h
+
+/Lantern/
+!/assets/localization/loader.json
+!/src/loader_localization.h
+!/src/loader_texts.h
+!/sdk/tools/compile-translations.ps1
+!/sdk/tests/catalog_checks.h
+!/sdk/tests/compile-translations.tests.ps1
+!/docs/localization-validation.md
+!/INSTALLATION.txt
