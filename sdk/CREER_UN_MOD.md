@@ -4,7 +4,8 @@ Ce guide correspond au chargeur **0.6.10**, au manifeste **V1** et à l’**ABI 
 Le [standard](STANDARD_V1.txt) définit les règles exactes ; le
 [header public](include/enshrouded_mod.h) définit les signatures C.
 Le dépôt est privé : son propriétaire doit donner accès aux développeurs qui
-souhaitent le cloner. Il contient les sources, pas une release binaire prête à installer.
+souhaitent le cloner. Les sources sont ici ; les paquets compilés prêts à
+installer sont disponibles séparément dans les Releases du dépôt.
 
 Le SDK permet à une DLL Windows x64 d’être découverte, configurée par monde et
 initialisée par le chargeur. Il ne fournit pas d’API de création d’objets,

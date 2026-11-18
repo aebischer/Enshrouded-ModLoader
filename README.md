@@ -5,6 +5,10 @@ au menu Modifier de chaque monde. Activation et paramètres sont enregistrés
 séparément pour chaque monde.
 
 Ce projet indépendant n'est pas un SDK officiel de Keen Games.
+Pour installer sans compiler, télécharger l’archive ZIP de la
+[version compilée](https://github.com/aebischer/Enshrouded-ModLoader/releases)
+et suivre son fichier `INSTALLATION.txt`. Le dépôt étant privé, un accès GitHub
+autorisé est nécessaire pour télécharger les releases.
 Le fonctionnement sur serveur dédié reste
 à développer : voir les [décisions multijoueur](docs/server-multiplayer-decisions.txt).
 
