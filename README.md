@@ -1,11 +1,11 @@
-# Enshrouded ModLoader 0.6.11
+# Enshrouded ModLoader 0.6.12
 
 Native Windows x64 mod loader for Enshrouded, with a **MODS** page in each
 world's **Edit** menu. Enabled mods and settings are stored separately for each world.
 This independent project is not an official Keen Games SDK.
 
 For installation without compiling, download the ZIP from
-[Releases](https://github.com/aebischer/Enshrouded-ModLoader/releases) and follow
+[Releases](https://github.com/aebischer/Enshrouded-ModLoader/releases/tag/v0.6.12) and follow
 [INSTALLATION.txt](INSTALLATION.txt). The repository and downloads are public; no GitHub account is required. Mods are installed separately.
 
 ## Install and use
@@ -35,6 +35,22 @@ Supported `enshrouded.exe` SHA-256:
 Game updates may require a loader update. If an incompatibility warning appears,
 do not start a modded world. Dedicated-server and multiplayer support is not
 certified; see [multiplayer decisions](docs/server-multiplayer-decisions.txt).
+
+## Package directory and upgrades
+
+Only `Mods/EnshroudedModLoader/` is scanned. Other frameworks may use the shared
+`Mods` / `mods` directory (the names are equivalent on Windows) without appearing
+in our catalogue or consuming its scan budget. A DLL needs an adjacent `.dll.mod`
+manifest with the `ENSHROUDED_PACKAGE_V1` header to appear automatically;
+enabled missing/broken packages still report errors.
+
+Run the 0.6.12 installer before copying updated mod packages. It moves recognized
+legacy package folders into the dedicated directory, preserving relative IDs,
+resources and saved package data. It does not rewrite `ModLoader/worlds`.
+Mixed folders (our packages and foreign DLLs), linked paths and destination
+collisions are refused without overwriting files. Installation failure rolls back
+both the proxy and package moves; an interrupted transaction is recovered on the
+next installer run. Do not manually copy the proxy to perform this migration.
 
 ## World profiles and settings
 
@@ -86,7 +102,8 @@ All loader text added inside the game—navigation, states, settings, errors and
 launch refusals—covers the game's 15 interface languages: English, French,
 German, Italian, Spanish, Russian, Polish, Japanese, Korean, Brazilian Portuguese,
 Thai, Turkish, Simplified Chinese, Traditional Chinese and Ukrainian.
-The selected game language controls the interface. English is the default
+The selected game language controls the interface, including failure dialogs.
+Before the native language is available, failure dialogs use English. English is the default
 language of project documentation and technical diagnostics.
 
 The source catalogue is `assets/localization/loader.json`. The build validates

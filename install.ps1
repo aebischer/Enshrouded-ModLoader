@@ -25,6 +25,79 @@ New-Item -ItemType Directory -Path $data -Force | Out-Null
 $installLock = [IO.File]::Open((Join-Path $data 'install.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
 $pending = Join-Path $data 'install.pending.json'
 $previous = Join-Path $data 'install.previous.dll'
+# Move only identified legacy packages. Relative package IDs and world settings stay unchanged.
+$modsRoot = Join-Path $GamePath 'Mods'
+$packageRoot = Join-Path $modsRoot 'EnshroudedModLoader'
+function Assert-PlainPath([string]$path) {
+    $full = [IO.Path]::GetFullPath($path)
+    $boundary = [IO.Path]::GetFullPath($GamePath).TrimEnd('\') + '\'
+    if (-not $full.StartsWith($boundary, [StringComparison]::OrdinalIgnoreCase)) { throw "Path outside game folder: $path" }
+    $cursor = $full
+    while ($cursor.Length -ge $boundary.Length) {
+        if (Test-Path -LiteralPath $cursor) {
+            if ((Get-Item -LiteralPath $cursor -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw "Linked package path refused: $cursor" }
+        }
+        $cursor = Split-Path $cursor -Parent
+    }
+}
+function Test-PackageHeader([string]$manifest) {
+    if (-not (Test-Path -LiteralPath $manifest -PathType Leaf)) { return $false }
+    Assert-PlainPath $manifest
+    if ((Get-Item -LiteralPath $manifest).Length -gt 16384) { return $false }
+    $reader = [IO.StreamReader]::new($manifest, [Text.Encoding]::UTF8, $true)
+    try { return $reader.ReadLine() -ceq 'ENSHROUDED_PACKAGE_V1' } finally { $reader.Dispose() }
+}
+function Get-LegacyMoves {
+    Assert-PlainPath $modsRoot
+    Assert-PlainPath $packageRoot
+    if (-not (Test-Path -LiteralPath $modsRoot)) { return }
+    foreach ($entry in Get-ChildItem -LiteralPath $modsRoot -Force) {
+        if ($entry.Name -ieq 'EnshroudedModLoader') { continue }
+        if ($entry.Attributes -band [IO.FileAttributes]::ReparsePoint) { continue }
+        if (-not $entry.PSIsContainer) {
+            if ($entry.Extension -ieq '.dll' -and (Test-PackageHeader ($entry.FullName + '.mod'))) {
+                $entry.Name
+                $entry.Name + '.mod'
+            }
+            continue
+        }
+        $queue = [Collections.Generic.Queue[string]]::new()
+        $queue.Enqueue($entry.FullName)
+        $ours = $false; $foreign = $false; $linked = $false; $count = 0
+        while ($queue.Count) {
+            foreach ($child in Get-ChildItem -LiteralPath $queue.Dequeue() -Force) {
+                if (++$count -gt 100000) { throw "Legacy scan limit: $($entry.FullName). Separate our packages before installing." }
+                if ($child.Attributes -band [IO.FileAttributes]::ReparsePoint) { $linked=$true; continue }
+                if ($child.PSIsContainer) { $queue.Enqueue($child.FullName); continue }
+                if ($child.Extension -ieq '.dll') {
+                    if (Test-PackageHeader ($child.FullName + '.mod')) { $ours=$true } else { $foreign=$true }
+                }
+            }
+        }
+        if ($ours) {
+            if ($foreign -or $linked) { throw "Mixed or linked legacy package folder: $($entry.FullName). Nothing was moved; separate our packages first." }
+            $entry.Name
+        }
+    }
+}
+function Get-MovePaths([string]$name) {
+    if (-not $name -or $name -in @('.', '..', 'EnshroudedModLoader') -or $name.IndexOfAny([IO.Path]::GetInvalidFileNameChars()) -ge 0) { throw 'Invalid package recovery path.' }
+    $from = Join-Path $modsRoot $name; $to = Join-Path $packageRoot $name
+    Assert-PlainPath $from; Assert-PlainPath $to
+    return @($from, $to)
+}
+function Restore-PackageMoves($record) {
+    $moves = @($record.packageMoves)
+    [array]::Reverse($moves)
+    foreach ($name in $moves) {
+        if (-not $name) { continue }
+        $paths = Get-MovePaths $name
+        if (Test-Path -LiteralPath $paths[1]) {
+            if (Test-Path -LiteralPath $paths[0]) { throw "Package recovery conflict: $name. No files overwritten." }
+            Move-Item -LiteralPath $paths[1] -Destination $paths[0]
+        } elseif (-not (Test-Path -LiteralPath $paths[0])) { throw "Package recovery file missing: $name" }
+    }
+}
 function Restore-PendingInstall {
     if (-not (Test-Path -LiteralPath $pending)) { return }
     $record = Get-Content -LiteralPath $pending -Raw | ConvertFrom-Json
@@ -44,6 +117,7 @@ function Restore-PendingInstall {
         if ($current) { Remove-Item -LiteralPath $dll }
         if (Test-Path -LiteralPath $receipt -PathType Leaf) { Remove-Item -LiteralPath $receipt }
     }
+    Restore-PackageMoves $record
     Remove-Item -LiteralPath $pending
 }
 function Assert-LoaderBinary([byte[]]$bytes) {
@@ -129,7 +203,12 @@ foreach ($other in @('powrprof.dll','dbghelp.dll')) {
 $source = Join-Path $PSScriptRoot 'dist\dinput8.dll'
 if (-not (Test-Path -LiteralPath $source)) { throw 'Source DLL missing. Build the project or extract the complete release ZIP.' }
 if (Test-Path -LiteralPath $receipt -PathType Container) { throw 'The receipt path is a directory. Installation was not changed.' }
-New-Item -ItemType Directory -Path (Join-Path $GamePath 'Mods') -Force | Out-Null
+$packageMoves = @(Get-LegacyMoves)
+foreach ($name in $packageMoves) {
+    $paths = Get-MovePaths $name
+    if (Test-Path -LiteralPath $paths[1]) { throw "Package destination already exists: $($paths[1]). Nothing was replaced." }
+}
+New-Item -ItemType Directory -Path $packageRoot -Force | Out-Null
 $transactionId = [guid]::NewGuid().ToString('N')
 $stagedDll = Join-Path $GamePath ('dinput8.' + $transactionId + '.new')
 $stagedReceipt = Join-Path $data ('receipt.' + $transactionId + '.new')
@@ -146,8 +225,12 @@ try {
         Copy-Item -LiteralPath $dll -Destination $previous -Force
         if ((Get-FileHash -LiteralPath $previous).Hash -ne $oldHash) { throw 'Invalid recovery backup.' }
     }
-    @{newHash=$newHash; oldHash=$oldHash} | ConvertTo-Json -Compress | Set-Content -LiteralPath $stagedPending -Encoding ASCII
+    @{newHash=$newHash; oldHash=$oldHash; packageMoves=$packageMoves} | ConvertTo-Json -Compress | Set-Content -LiteralPath $stagedPending -Encoding UTF8
     [IO.File]::Move($stagedPending, $pending)
+    foreach ($name in $packageMoves) {
+        $paths = Get-MovePaths $name
+        Move-Item -LiteralPath $paths[0] -Destination $paths[1]
+    }
     if ($oldHash) { [IO.File]::Replace($stagedDll, $dll, ($stagedDll + '.old')) } else { [IO.File]::Move($stagedDll, $dll) }
     if (Test-Path -LiteralPath $receipt) { [IO.File]::Replace($stagedReceipt, $receipt, ($stagedReceipt + '.old')) } else { [IO.File]::Move($stagedReceipt, $receipt) }
     if ((Get-FileHash -LiteralPath $dll).Hash -ne $newHash -or (Get-Content -LiteralPath $receipt -Raw).Trim() -ne $newHash) { throw 'Final verification failed.' }
@@ -161,5 +244,5 @@ try {
         if (Test-Path -LiteralPath $tempFile -PathType Leaf) { Remove-Item -LiteralPath $tempFile -ErrorAction SilentlyContinue }
     }
 }
-Write-Host "ModLoader 0.6.11 installed and verified in $GamePath."
+Write-Host "ModLoader 0.6.12 installed and verified in $GamePath."
 } finally { $installLock.Dispose() }

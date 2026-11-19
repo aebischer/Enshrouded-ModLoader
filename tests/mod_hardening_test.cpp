@@ -17,7 +17,7 @@ static void child(const std::wstring& mode,const std::filesystem::path& root) {
 int wmain(int argc,wchar_t** argv) {
     const auto root=argc>2?std::filesystem::path(argv[2]):std::filesystem::current_path()/("regression-"+std::to_string(GetCurrentProcessId()));
     folder=(root/L"ModLoader").wstring();
-    const auto mods=root/L"Mods";
+    const auto mods=root/L"Mods"/L"EnshroudedModLoader";
     std::string error;
     if(argc>2) {
         if(std::wstring(argv[1])==L"--load") {

@@ -1,4 +1,4 @@
-ENSHROUDED MODLOADER 0.6.11 — WINDOWS X64
+ENSHROUDED MODLOADER 0.6.12 — WINDOWS X64
 Development build — no compiler required for the release ZIP
 
 1. Close Enshrouded and back up your saves.
@@ -6,7 +6,7 @@ Development build — no compiler required for the release ZIP
    and dist/dinput8.dll together. Do not run the installer inside the ZIP viewer.
 3. Run Install.cmd. It detects Steam's game directory or asks for the folder
    containing enshrouded.exe. Wait for the installation/verification message.
-4. Install compatible mods separately under the game's Mods directory.
+4. Install compatible mods separately under Mods/EnshroudedModLoader in the game directory.
 5. Start Enshrouded, open Edit -> MODS for the chosen world, enable the mods
    and configure them before starting that world.
 
@@ -17,7 +17,7 @@ Installed layout:
 Enshrouded/
   enshrouded.exe
   dinput8.dll
-  Mods/                         separately installed mods
+  Mods/EnshroudedModLoader/      separately installed mods
   ModLoader/mod-loader.log      diagnostics
   ModLoader/worlds/             per-world activation/settings
   RandomWorld/                  installer receipts/recovery (historical name)
@@ -44,3 +44,15 @@ for verification with Get-FileHash.
 Source, documentation and public downloads:
 https://github.com/aebischer/Enshrouded-ModLoader
 No GitHub account is required to view the source or download releases.
+
+PACKAGE DIRECTORY (0.6.12)
+Mods/EnshroudedModLoader/<package>/<mod>.dll and <mod>.dll.mod.
+Run Install.cmd before copying updated mod packages. It migrates recognized old
+package folders from Mods, including resources and saved package data. Relative
+mod IDs, enabled choices and ModLoader/worlds settings remain unchanged.
+Mixed folders, linked paths and destination collisions are refused. Separate
+mixed packages manually without renaming their relative IDs, then retry.
+Failed installation restores the old proxy and package locations. If interrupted,
+run Install.cmd again for recovery before starting the game.
+Failure dialogs cover all 15 game languages, with English before the game locale
+is available. Technical logs and installation instructions remain in English.

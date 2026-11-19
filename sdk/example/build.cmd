@@ -7,8 +7,8 @@ if errorlevel 1 (
 )
 set "package=%~1"
 if not defined package set "package=%~dp0package"
-if not exist "%package%\Mods\example" mkdir "%package%\Mods\example"
-cl /nologo /std:c++17 /utf-8 /EHsc /O2 /MT /W4 /WX /LD /I"%~dp0..\include" "%~dp0example_mod.cpp" /Fo:"%package%\example_mod.obj" /Fe:"%package%\Mods\example\example_mod.dll" /link /IMPLIB:"%package%\example_mod.lib"
+if not exist "%package%\Mods\EnshroudedModLoader\example" mkdir "%package%\Mods\EnshroudedModLoader\example"
+cl /nologo /std:c++17 /utf-8 /EHsc /O2 /MT /W4 /WX /LD /I"%~dp0..\include" "%~dp0example_mod.cpp" /Fo:"%package%\example_mod.obj" /Fe:"%package%\Mods\EnshroudedModLoader\example\example_mod.dll" /link /IMPLIB:"%package%\example_mod.lib"
 if errorlevel 1 exit /b 1
-copy /y "%~dp0example_mod.dll.mod" "%package%\Mods\example\example_mod.dll.mod" >nul
+copy /y "%~dp0example_mod.dll.mod" "%package%\Mods\EnshroudedModLoader\example\example_mod.dll.mod" >nul
 exit /b %errorlevel%

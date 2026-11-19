@@ -3,9 +3,9 @@
 int main() {
     const auto root=std::filesystem::current_path()/("profile-reset-test-"+std::to_string(GetCurrentProcessId()));
     folder=(root/L"ModLoader").wstring();
-    std::filesystem::create_directories(root/L"Mods");
+    std::filesystem::create_directories(root/L"Mods"/L"EnshroudedModLoader");
     const auto source=std::filesystem::current_path()/L"test-mods";
-    for(const auto* name:{L"Test_A.dll",L"Test_A.dll.mod"}) std::filesystem::copy_file(source/name,root/L"Mods"/name);
+    for(const auto* name:{L"Test_A.dll",L"Test_A.dll.mod"}) std::filesystem::copy_file(source/name,root/L"Mods"/L"EnshroudedModLoader"/name);
     const std::string newWorld(32,'a'),oldWorld(32,'b');
     std::string error; std::set<std::string> entries;
     // Missing files have the same meaning for all worlds; browsing does not write.

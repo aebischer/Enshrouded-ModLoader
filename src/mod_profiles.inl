@@ -115,7 +115,7 @@ static bool needsRestart(const std::string& key,const std::set<std::string>& des
 static bool modPath(const std::string& id,std::filesystem::path& out) {
     if(modId(id)!=id) return false;
     std::error_code ec;
-    const auto root=std::filesystem::canonical(std::filesystem::path(folder).parent_path()/L"Mods",ec);
+    const auto root=std::filesystem::canonical(packageRoot(),ec);
     if(ec) return false;
     out=std::filesystem::canonical(root/std::filesystem::u8path(id),ec);
     if(ec || !std::filesystem::is_regular_file(out,ec) || ec) return false;

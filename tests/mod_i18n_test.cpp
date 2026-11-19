@@ -4,12 +4,27 @@
 #include "../sdk/tests/catalog_checks.h"
 int main() {
  checkCatalogue(LoaderTexts);
+ for(auto language:enshrouded::i18n::supportedLanguages) {
+  for(auto key:{"dialog.start.title","dialog.start.body","dialog.ui.title","dialog.ui.body"}) {
+   wchar_t converted[2048]{}; assert(dialogText(key,language,converted,2048));
+   const auto source=enshrouded::i18n::find(LoaderTexts,key,language);
+   char roundtrip[8192]{};
+   assert(WideCharToMultiByte(CP_UTF8,WC_ERR_INVALID_CHARS,converted,-1,roundtrip,8192,nullptr,nullptr));
+   assert(!strcmp(source,roundtrip));
+  }
+ }
+ assert(dialogLanguage()==1);
+ imageBase=1; assert(dialogLanguage()==1); imageBase=0;
+ wchar_t fallbackText[2048]{},english[2048]{};
+ assert(dialogText("dialog.start.body",999,fallbackText,2048));
+ assert(dialogText("dialog.start.body",0,english,2048));
+ assert(!wcscmp(fallbackText,english));
  const auto root=std::filesystem::current_path()/("i18n-test-"+std::to_string(GetCurrentProcessId()));
- std::filesystem::create_directories(root/L"ModLoader");std::filesystem::create_directories(root/L"Mods");
- folder=(root/L"ModLoader").wstring();std::ofstream(root/L"Mods"/L"sample.dll")<<"not executable";
+ std::filesystem::create_directories(root/L"ModLoader");std::filesystem::create_directories(root/L"Mods"/L"EnshroudedModLoader");
+ folder=(root/L"ModLoader").wstring();std::ofstream(root/L"Mods"/L"EnshroudedModLoader"/L"sample.dll")<<"not executable";
  const std::string manifest="ENSHROUDED_PACKAGE_V1\nkind=mod\nversion=1.0\nabi=1\nsetting=mode|choice|Mode|low|low|high\n";
  auto parse=[&](const std::string& suffix,Package& p) {
-  std::ofstream(root/L"Mods"/L"sample.dll.mod",std::ios::binary)<<manifest<<suffix;
+  std::ofstream(root/L"Mods"/L"EnshroudedModLoader"/L"sample.dll.mod",std::ios::binary)<<manifest<<suffix;
   std::string error;return readPackage("sample.dll",p,error);
  };
  Package p;const std::string fallback="fallback";

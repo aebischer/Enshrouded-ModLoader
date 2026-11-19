@@ -1,4 +1,4 @@
-MULTILINGUAL MODS — author guide (ModLoader 0.6.10+, ABI 1)
+MULTILINGUAL MODS — author guide (ModLoader 0.6.12+, ABI 1)
 
 1. Translate settings displayed by the loader
 
@@ -94,7 +94,7 @@ In-game, test multiple languages, missing-translation fallback, choices,
 booleans, accents, native item text and worlds with different settings.
 Changing language must never change the saved values.
 
-4. Require full catalogue coverage at build time (SDK 0.6.11)
+4. Require full catalogue coverage at build time (SDK 0.6.12)
 
 From your mod repository root:
   powershell -NoProfile -ExecutionPolicy Bypass -File sdk/tools/compile-translations.ps1 -Catalog assets/localization/texts.json -Output src/mod_texts.h -Symbol ModTexts

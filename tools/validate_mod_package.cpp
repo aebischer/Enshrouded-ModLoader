@@ -2,7 +2,7 @@
 #include "../src/loader.cpp"
 int wmain(int argc,wchar_t** argv) {
     if(argc<3) {
-        fputs("Usage: validate_mod_package.exe <root containing Mods> <mod/id.dll> [other enabled mod ids]\n",stderr);
+        fputs("Usage: validate_mod_package.exe <root containing Mods/EnshroudedModLoader> <mod/id.dll> [other enabled mod ids]\n",stderr);
         return 2;
     }
     try {

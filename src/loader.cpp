@@ -87,7 +87,32 @@ static uint32_t gameLanguage() {
     const auto pool=readAt<uintptr_t>(reinterpret_cast<void*>(services),0x33ce8);
     return pool?readAt<uint32_t>(reinterpret_cast<void*>(pool),0xd8):1;
 }
+// Error dialogs can run before initialization, or while the native UI is failing.
+// Do not let a stale native locale pointer hide the original error.
+static uint32_t dialogLanguage() noexcept {
+    __try {return gameLanguage();}
+    __except(GetExceptionCode()==EXCEPTION_ACCESS_VIOLATION || GetExceptionCode()==EXCEPTION_IN_PAGE_ERROR
+             ? EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH) {return 1;}
+}
 #include "loader_localization.h"
+static std::filesystem::path packageRoot() {
+    return std::filesystem::path(folder).parent_path()/L"Mods"/L"EnshroudedModLoader";
+}
+static bool hasPackageManifest(const std::filesystem::path& dll) {
+    const auto path=dll.wstring()+L".mod";
+    const auto attributes=GetFileAttributesW(path.c_str());
+    if(attributes==INVALID_FILE_ATTRIBUTES || (attributes&(FILE_ATTRIBUTE_DIRECTORY|FILE_ATTRIBUTE_REPARSE_POINT))) return false;
+    FILE* file=nullptr;
+    if(_wfopen_s(&file,path.c_str(),L"rb") || !file) return false;
+    char header[64]{};
+    const auto count=fread(header,1,sizeof(header)-1,file);
+    fclose(file);
+    const char* first=header;
+    if(count>=3 && !memcmp(first,"\xef\xbb\xbf",3)) first+=3;
+    constexpr char marker[]="ENSHROUDED_PACKAGE_V1";
+    constexpr size_t size=sizeof(marker)-1;
+    return !strncmp(first,marker,size) && (first[size]=='\r' || first[size]=='\n' || first[size]=='\0');
+}
 using WorldLookup=unsigned char*(__fastcall*)(uint16_t);
 using EditFrame=uintptr_t(__fastcall*)(void*,void*);
 using BrowserScreen=void(__fastcall*)(void*);
@@ -116,7 +141,7 @@ static void updatePlanPreview() {
 }
 static void refreshMods() {
     modFiles.clear(); catalog.clear(); catalogError.clear(); modPage=0; selectedMod=SIZE_MAX; pageDrawLogged=false;
-    const auto root=std::filesystem::path(folder).parent_path()/L"Mods";
+    const auto root=packageRoot();
     std::error_code ec;
     if(std::filesystem::exists(root,ec)) {
         std::filesystem::recursive_directory_iterator it(root,ec),end;
@@ -127,7 +152,10 @@ static void refreshMods() {
             if(it.depth()>=16) it.disable_recursion_pending();
             auto ext=it->path().extension().wstring();
             std::transform(ext.begin(),ext.end(),ext.begin(),[](wchar_t c){return towlower(c);});
-            if(it->is_regular_file(ec) && ext==L".dll") {
+            if(it->is_symlink(ec) || (GetFileAttributesW(it->path().c_str()) & FILE_ATTRIBUTE_REPARSE_POINT)) {
+                it.disable_recursion_pending();
+            } else if(it->is_regular_file(ec) && ext==L".dll" &&
+                      hasPackageManifest(it->path())) {
                 const auto id=modId(it->path().lexically_relative(root).u8string());
                 if(!id.empty()) modFiles.push_back(id);
             }
@@ -153,7 +181,7 @@ static void changeModPage(size_t page) {
 static void uiFailure() noexcept {
     modsOpen=false;
     try {log("Mods UI exception; page closed. See profile/catalog before retry.");} catch(...) {}
-    MessageBoxW(nullptr,L"Une erreur a interrompu la gestion des mods. Aucun monde n'a ete lance par ce refus. Consultez ModLoader/mod-loader.log, puis rouvrez MODS.",L"Enshrouded - Erreur de mods",MB_OK|MB_ICONERROR);
+    loaderErrorDialog("dialog.ui.body","dialog.ui.title",MB_OK|MB_ICONERROR);
 }
 
 // Functions/layouts verified against the SHA-256-pinned client's world-edit UI.
@@ -383,7 +411,7 @@ static DWORD initializeImpl() {
         throw std::runtime_error("Cannot pin loader");
     folder=exe; folder.resize(folder.find_last_of(L"\\/"));
     folder+=L"\\ModLoader"; CreateDirectoryW(folder.c_str(),nullptr);
-    log("ModLoader 0.6.11: validated packages and bounded world profiles; RandomWorld excluded");
+    log("ModLoader 0.6.12: isolated package directory and localized failure dialogs");
     if(!matchingExe(exe)) throw std::runtime_error("Unsupported executable");
     imageBase=reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
     if(!unchangedHookTargets(exe)) throw std::runtime_error("Hook target modified in memory");
@@ -410,7 +438,7 @@ static DWORD WINAPI initialize(void*) noexcept {
     try {return initializeImpl();}
     catch(const std::exception& e) {log(e.what());}
     catch(...) {log("Loader initialization failed");}
-    MessageBoxW(nullptr,L"Le chargeur de mods n'a pas pu demarrer. Fermez le jeu : ne chargez pas un monde utilisant des mods. Consultez ModLoader/mod-loader.log.",L"Enshrouded - Mods indisponibles",MB_OK|MB_ICONERROR|MB_SETFOREGROUND);
+    loaderErrorDialog("dialog.start.body","dialog.start.title",MB_OK|MB_ICONERROR|MB_SETFOREGROUND);
     return 1;
 }
 static HMODULE systemInput() {

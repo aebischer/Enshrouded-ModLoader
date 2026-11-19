@@ -7,9 +7,9 @@ int main() {
     assert(!strcmp(exampleText("item.name",3),"Example tool"));
     assert(!strcmp(exampleText("item.name",999),"Example tool"));
     assert(exampleText("missing",5)==nullptr);
-    const auto source=std::filesystem::current_path()/L"sdk-package"/L"Mods"/L"example";
+    const auto source=std::filesystem::current_path()/L"sdk-package"/L"Mods"/L"EnshroudedModLoader"/L"example";
     const auto root=std::filesystem::current_path()/("sdk-test-"+std::to_string(GetCurrentProcessId()));
-    const auto dest=root/L"Mods"/L"example";
+    const auto dest=root/L"Mods"/L"EnshroudedModLoader"/L"example";
     std::filesystem::create_directories(dest);
     for(const auto* file:{L"example_mod.dll",L"example_mod.dll.mod"}) std::filesystem::copy_file(source/file,dest/file);
     folder=(root/L"ModLoader").wstring();

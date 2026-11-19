@@ -106,3 +106,5 @@
 !/INSTALLATION.txt
 
 !/tests/README.md
+!/tests/test_package_migration.ps1
+!/docs/package-layout-0612.md

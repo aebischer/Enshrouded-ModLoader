@@ -27,7 +27,10 @@ Verified structure extents: frame 0x23 bytes (0x30 buffer), text up to 0x143
 (0x150 buffer), row style up to 0x58 (0x60 buffer), panel up to 0xb4 (0xc0 buffer).
 Do not reintroduce the old undersized text buffer.
 
-The browser discovers DLLs recursively without loading them, lists six entries
+The browser discovers DLLs only under `Mods/EnshroudedModLoader/`, without loading
+them. Automatic discovery requires an adjacent `.dll.mod` manifest beginning with
+`ENSHROUDED_PACKAGE_V1`; enabled missing or invalid packages remain visible as errors.
+Other frameworks' directories are not traversed. The browser lists six entries
 per page, provides refresh and empty states, and displays declarative settings
 using native difficulty controls. The provider advertisement is not drawn.
 All custom labels and diagnostics use the 15-language loader catalogue.

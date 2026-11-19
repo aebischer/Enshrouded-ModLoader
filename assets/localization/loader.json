@@ -68,7 +68,11 @@
     "err.settings_invalid": "Invalid configuration.",
     "err.settings_changed": "Settings changed elsewhere. Refresh before continuing.",
     "err.settings_write": "Cannot save settings.",
-    "err.resident_manifest": "Restart the game: a loaded manifest changed or became inaccessible: "
+    "err.resident_manifest": "Restart the game: a loaded manifest changed or became inaccessible: ",
+    "dialog.start.title": "Enshrouded - Mods unavailable",
+    "dialog.start.body": "The mod loader could not start. Close the game: do not load a world that uses mods. Check ModLoader/mod-loader.log.",
+    "dialog.ui.title": "Enshrouded - Mod error",
+    "dialog.ui.body": "An error interrupted mod management. This refusal did not start a world. Check ModLoader/mod-loader.log, then reopen MODS."
   },
   "fr": {
     "ui.title": "MODS",
@@ -139,7 +143,11 @@
     "err.settings_invalid": "Configuration invalide.",
     "err.settings_changed": "Paramètres modifiés ailleurs. Actualise avant de continuer.",
     "err.settings_write": "Enregistrement des paramètres impossible.",
-    "err.resident_manifest": "Redémarre le jeu : un manifeste chargé a changé ou est inaccessible : "
+    "err.resident_manifest": "Redémarre le jeu : un manifeste chargé a changé ou est inaccessible : ",
+    "dialog.start.title": "Enshrouded - Mods indisponibles",
+    "dialog.start.body": "Le chargeur de mods n’a pas pu démarrer. Fermez le jeu : ne chargez pas un monde utilisant des mods. Consultez ModLoader/mod-loader.log.",
+    "dialog.ui.title": "Enshrouded - Erreur de mods",
+    "dialog.ui.body": "Une erreur a interrompu la gestion des mods. Aucun monde n’a été lancé par ce refus. Consultez ModLoader/mod-loader.log, puis rouvrez MODS."
   },
   "de": {
     "ui.title": "MODS",
@@ -210,7 +218,11 @@
     "err.settings_invalid": "Ungültige Konfiguration.",
     "err.settings_changed": "Einstellungen wurden anderweitig geändert. Vor dem Fortfahren aktualisieren.",
     "err.settings_write": "Einstellungen können nicht gespeichert werden.",
-    "err.resident_manifest": "Spiel neu starten: Ein geladenes Manifest wurde geändert oder ist nicht zugänglich: "
+    "err.resident_manifest": "Spiel neu starten: Ein geladenes Manifest wurde geändert oder ist nicht zugänglich: ",
+    "dialog.start.title": "Enshrouded - Mods nicht verfügbar",
+    "dialog.start.body": "Der Mod-Loader konnte nicht starten. Schließe das Spiel und lade keine Welt, die Mods verwendet. Sieh in ModLoader/mod-loader.log nach.",
+    "dialog.ui.title": "Enshrouded - Mod-Fehler",
+    "dialog.ui.body": "Ein Fehler hat die Mod-Verwaltung unterbrochen. Durch diese Ablehnung wurde keine Welt gestartet. Sieh in ModLoader/mod-loader.log nach und öffne MODS erneut."
   },
   "it": {
     "ui.title": "MOD",
@@ -281,7 +293,11 @@
     "err.settings_invalid": "Configurazione non valida.",
     "err.settings_changed": "Impostazioni modificate altrove. Aggiorna prima di continuare.",
     "err.settings_write": "Impossibile salvare le impostazioni.",
-    "err.resident_manifest": "Riavvia il gioco: un manifesto caricato è cambiato o è inaccessibile: "
+    "err.resident_manifest": "Riavvia il gioco: un manifesto caricato è cambiato o è inaccessibile: ",
+    "dialog.start.title": "Enshrouded - Mod non disponibili",
+    "dialog.start.body": "Impossibile avviare il caricatore di mod. Chiudi il gioco: non caricare mondi che usano mod. Consulta ModLoader/mod-loader.log.",
+    "dialog.ui.title": "Enshrouded - Errore delle mod",
+    "dialog.ui.body": "Un errore ha interrotto la gestione delle mod. Questo rifiuto non ha avviato alcun mondo. Consulta ModLoader/mod-loader.log, poi riapri MODS."
   },
   "es": {
     "ui.title": "MODS",
@@ -352,7 +368,11 @@
     "err.settings_invalid": "Configuración no válida.",
     "err.settings_changed": "Los ajustes han cambiado en otro sitio. Actualiza antes de continuar.",
     "err.settings_write": "No se pueden guardar los ajustes.",
-    "err.resident_manifest": "Reinicia el juego: un manifiesto cargado ha cambiado o es inaccesible: "
+    "err.resident_manifest": "Reinicia el juego: un manifiesto cargado ha cambiado o es inaccesible: ",
+    "dialog.start.title": "Enshrouded - Mods no disponibles",
+    "dialog.start.body": "No se pudo iniciar el cargador de mods. Cierra el juego: no cargues un mundo que use mods. Consulta ModLoader/mod-loader.log.",
+    "dialog.ui.title": "Enshrouded - Error de mods",
+    "dialog.ui.body": "Un error interrumpió la gestión de mods. Este rechazo no inició ningún mundo. Consulta ModLoader/mod-loader.log y vuelve a abrir MODS."
   },
   "ru": {
     "ui.title": "МОДЫ",
@@ -423,7 +443,11 @@
     "err.settings_invalid": "Неверная конфигурация.",
     "err.settings_changed": "Параметры изменены другой программой. Обновите перед продолжением.",
     "err.settings_write": "Не удалось сохранить параметры.",
-    "err.resident_manifest": "Перезапустите игру: загруженный манифест изменён или недоступен: "
+    "err.resident_manifest": "Перезапустите игру: загруженный манифест изменён или недоступен: ",
+    "dialog.start.title": "Enshrouded — Моды недоступны",
+    "dialog.start.body": "Не удалось запустить загрузчик модов. Закройте игру: не загружайте миры, использующие моды. Проверьте ModLoader/mod-loader.log.",
+    "dialog.ui.title": "Enshrouded — Ошибка модов",
+    "dialog.ui.body": "Ошибка прервала управление модами. При этом отказе мир не был запущен. Проверьте ModLoader/mod-loader.log, затем снова откройте MODS."
   },
   "pl": {
     "ui.title": "MODY",
@@ -494,7 +518,11 @@
     "err.settings_invalid": "Nieprawidłowa konfiguracja.",
     "err.settings_changed": "Ustawienia zmieniono gdzie indziej. Odśwież przed kontynuowaniem.",
     "err.settings_write": "Nie można zapisać ustawień.",
-    "err.resident_manifest": "Uruchom grę ponownie: załadowany manifest zmienił się lub jest niedostępny: "
+    "err.resident_manifest": "Uruchom grę ponownie: załadowany manifest zmienił się lub jest niedostępny: ",
+    "dialog.start.title": "Enshrouded — Mody niedostępne",
+    "dialog.start.body": "Nie udało się uruchomić programu ładującego mody. Zamknij grę: nie wczytuj świata korzystającego z modów. Sprawdź ModLoader/mod-loader.log.",
+    "dialog.ui.title": "Enshrouded — Błąd modów",
+    "dialog.ui.body": "Błąd przerwał zarządzanie modami. Ta odmowa nie spowodowała uruchomienia świata. Sprawdź ModLoader/mod-loader.log, a następnie ponownie otwórz MODS."
   },
   "ja": {
     "ui.title": "MOD",
@@ -565,7 +593,11 @@
     "err.settings_invalid": "設定が無効です。",
     "err.settings_changed": "設定が別の場所で変更されました。続行前に更新してください。",
     "err.settings_write": "設定を保存できません。",
-    "err.resident_manifest": "ゲームを再起動してください。読み込み済みマニフェストが変更されたか、アクセスできません："
+    "err.resident_manifest": "ゲームを再起動してください。読み込み済みマニフェストが変更されたか、アクセスできません：",
+    "dialog.start.title": "Enshrouded - MODを利用できません",
+    "dialog.start.body": "MODローダーを起動できませんでした。ゲームを終了してください。MODを使用するワールドを読み込まないでください。ModLoader/mod-loader.logを確認してください。",
+    "dialog.ui.title": "Enshrouded - MODエラー",
+    "dialog.ui.body": "エラーによりMODの管理が中断されました。この拒否によってワールドは起動されていません。ModLoader/mod-loader.logを確認してから、MODSを開き直してください。"
   },
   "ko": {
     "ui.title": "모드",
@@ -636,7 +668,11 @@
     "err.settings_invalid": "설정이 잘못되었습니다.",
     "err.settings_changed": "다른 곳에서 설정을 변경했습니다. 계속하기 전에 새로 고침하세요.",
     "err.settings_write": "설정을 저장할 수 없습니다.",
-    "err.resident_manifest": "게임을 다시 시작하세요. 로드된 매니페스트가 변경되었거나 접근할 수 없습니다: "
+    "err.resident_manifest": "게임을 다시 시작하세요. 로드된 매니페스트가 변경되었거나 접근할 수 없습니다: ",
+    "dialog.start.title": "Enshrouded - 모드 사용 불가",
+    "dialog.start.body": "모드 로더를 시작하지 못했습니다. 게임을 종료하고 모드를 사용하는 월드를 불러오지 마세요. ModLoader/mod-loader.log를 확인하세요.",
+    "dialog.ui.title": "Enshrouded - 모드 오류",
+    "dialog.ui.body": "오류로 인해 모드 관리가 중단되었습니다. 이번 거부로 월드가 시작되지는 않았습니다. ModLoader/mod-loader.log를 확인한 후 MODS를 다시 여세요."
   },
   "pt-br": {
     "ui.title": "MODS",
@@ -707,7 +743,11 @@
     "err.settings_invalid": "Configuração inválida.",
     "err.settings_changed": "As configurações mudaram em outro lugar. Atualize antes de continuar.",
     "err.settings_write": "Não foi possível salvar as configurações.",
-    "err.resident_manifest": "Reinicie o jogo: um manifesto carregado mudou ou ficou inacessível: "
+    "err.resident_manifest": "Reinicie o jogo: um manifesto carregado mudou ou ficou inacessível: ",
+    "dialog.start.title": "Enshrouded - Mods indisponíveis",
+    "dialog.start.body": "Não foi possível iniciar o carregador de mods. Feche o jogo: não carregue um mundo que use mods. Consulte ModLoader/mod-loader.log.",
+    "dialog.ui.title": "Enshrouded - Erro de mods",
+    "dialog.ui.body": "Um erro interrompeu o gerenciamento de mods. Esta recusa não iniciou nenhum mundo. Consulte ModLoader/mod-loader.log e abra MODS novamente."
   },
   "th": {
     "ui.title": "ม็อด",
@@ -778,7 +818,11 @@
     "err.settings_invalid": "การตั้งค่าไม่ถูกต้อง",
     "err.settings_changed": "การตั้งค่าถูกแก้ไขที่อื่น รีเฟรชก่อนดำเนินการต่อ",
     "err.settings_write": "ไม่สามารถบันทึกการตั้งค่าได้",
-    "err.resident_manifest": "เริ่มเกมใหม่: แมนนิเฟสต์ที่โหลดถูกเปลี่ยนหรือเข้าถึงไม่ได้: "
+    "err.resident_manifest": "เริ่มเกมใหม่: แมนนิเฟสต์ที่โหลดถูกเปลี่ยนหรือเข้าถึงไม่ได้: ",
+    "dialog.start.title": "Enshrouded - ไม่สามารถใช้ม็อดได้",
+    "dialog.start.body": "ไม่สามารถเริ่มตัวโหลดม็อดได้ กรุณาปิดเกมและอย่าโหลดโลกที่ใช้ม็อด ตรวจสอบ ModLoader/mod-loader.log",
+    "dialog.ui.title": "Enshrouded - ข้อผิดพลาดของม็อด",
+    "dialog.ui.body": "ข้อผิดพลาดขัดจังหวะการจัดการม็อด การปฏิเสธครั้งนี้ไม่ได้เริ่มโลกใด ๆ ตรวจสอบ ModLoader/mod-loader.log แล้วเปิด MODS อีกครั้ง"
   },
   "tr": {
     "ui.title": "MODLAR",
@@ -849,7 +893,11 @@
     "err.settings_invalid": "Geçersiz yapılandırma.",
     "err.settings_changed": "Ayarlar başka yerde değişti. Devam etmeden önce yenileyin.",
     "err.settings_write": "Ayarlar kaydedilemiyor.",
-    "err.resident_manifest": "Oyunu yeniden başlatın: yüklü bir bildirim dosyası değişti veya erişilemiyor: "
+    "err.resident_manifest": "Oyunu yeniden başlatın: yüklü bir bildirim dosyası değişti veya erişilemiyor: ",
+    "dialog.start.title": "Enshrouded - Modlar kullanılamıyor",
+    "dialog.start.body": "Mod yükleyicisi başlatılamadı. Oyunu kapatın; mod kullanan bir dünya yüklemeyin. ModLoader/mod-loader.log dosyasını inceleyin.",
+    "dialog.ui.title": "Enshrouded - Mod hatası",
+    "dialog.ui.body": "Bir hata mod yönetimini durdurdu. Bu ret sonucunda hiçbir dünya başlatılmadı. ModLoader/mod-loader.log dosyasını inceleyip MODS menüsünü yeniden açın."
   },
   "zh-cn": {
     "ui.title": "模组",
@@ -920,7 +968,11 @@
     "err.settings_invalid": "配置无效。",
     "err.settings_changed": "设置已被其他程序更改。继续前请刷新。",
     "err.settings_write": "无法保存设置。",
-    "err.resident_manifest": "请重启游戏：已加载的清单已更改或无法访问："
+    "err.resident_manifest": "请重启游戏：已加载的清单已更改或无法访问：",
+    "dialog.start.title": "Enshrouded - 模组不可用",
+    "dialog.start.body": "模组加载器无法启动。请关闭游戏，不要加载使用模组的世界。请查看 ModLoader/mod-loader.log。",
+    "dialog.ui.title": "Enshrouded - 模组错误",
+    "dialog.ui.body": "错误中断了模组管理。本次拒绝操作未启动任何世界。请查看 ModLoader/mod-loader.log，然后重新打开 MODS。"
   },
   "zh-tw": {
     "ui.title": "模組",
@@ -991,7 +1043,11 @@
     "err.settings_invalid": "設定無效。",
     "err.settings_changed": "設定已被其他程式變更。繼續前請重新整理。",
     "err.settings_write": "無法儲存設定。",
-    "err.resident_manifest": "請重新啟動遊戲：已載入的資訊清單已變更或無法存取："
+    "err.resident_manifest": "請重新啟動遊戲：已載入的資訊清單已變更或無法存取：",
+    "dialog.start.title": "Enshrouded - 模組無法使用",
+    "dialog.start.body": "模組載入器無法啟動。請關閉遊戲，不要載入使用模組的世界。請查看 ModLoader/mod-loader.log。",
+    "dialog.ui.title": "Enshrouded - 模組錯誤",
+    "dialog.ui.body": "錯誤中斷了模組管理。本次拒絕操作未啟動任何世界。請查看 ModLoader/mod-loader.log，然後重新開啟 MODS。"
   },
   "uk": {
     "ui.title": "МОДИ",
@@ -1062,6 +1118,10 @@
     "err.settings_invalid": "Неправильна конфігурація.",
     "err.settings_changed": "Параметри змінено деінде. Оновіть перед продовженням.",
     "err.settings_write": "Не вдалося зберегти параметри.",
-    "err.resident_manifest": "Перезапустіть гру: завантажений маніфест змінено або він недоступний: "
+    "err.resident_manifest": "Перезапустіть гру: завантажений маніфест змінено або він недоступний: ",
+    "dialog.start.title": "Enshrouded — Моди недоступні",
+    "dialog.start.body": "Не вдалося запустити завантажувач модів. Закрийте гру: не завантажуйте світи, що використовують моди. Перевірте ModLoader/mod-loader.log.",
+    "dialog.ui.title": "Enshrouded — Помилка модів",
+    "dialog.ui.body": "Помилка перервала керування модами. Через цю відмову жоден світ не було запущено. Перевірте ModLoader/mod-loader.log, а потім знову відкрийте MODS."
   }
 }

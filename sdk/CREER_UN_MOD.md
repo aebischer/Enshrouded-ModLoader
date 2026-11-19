@@ -1,6 +1,6 @@
 # Create and distribute a compatible mod
 
-This guide targets **ModLoader 0.6.11**, **manifest V1** and **ABI 1**.
+This guide targets **ModLoader 0.6.12**, **manifest V1** and **ABI 1**.
 The [standard](STANDARD_V1.txt) defines the contract; the
 [public header](include/enshrouded_mod.h) defines the C signatures.
 The repository is public and can be cloned without a GitHub account. Compiled player
@@ -33,8 +33,8 @@ tests/test-mod-i18n.cmd
 | Output | Purpose |
 |---|---|
 | `dist\dinput8.dll` | Loader proxy |
-| `build\sdk-package\Mods\example\example_mod.dll` | Sample mod without gameplay effects |
-| `build\sdk-package\Mods\example\example_mod.dll.mod` | Sample manifest |
+| `build\sdk-package\Mods\EnshroudedModLoader\example\example_mod.dll` | Sample mod without gameplay effects |
+| `build\sdk-package\Mods\EnshroudedModLoader\example\example_mod.dll.mod` | Sample manifest |
 | `build\validate_mod_package.exe` | Static package validation; does not execute mod DLLs |
 | `build\mod_sdk_test.exe` | SDK test in a temporary environment; executes the sample |
 
@@ -66,12 +66,12 @@ cd C:\path\MyProject
 example\build.cmd C:\path\MyPackage
 ```
 
-The output is `MyPackage\Mods\example\example_mod.dll` and its manifest.
+The output is `MyPackage\Mods\EnshroudedModLoader\example\example_mod.dll` and its manifest.
 Distribute `Mods` and useful documentation, not `.obj`, `.lib` or `.exp` files.
 
 To give the mod its own identity, change the output folder and `example_mod`
 name in the build script and rename its manifest accordingly. For example:
-`Mods\mystudio\mystudio_mymod.dll` and `mystudio_mymod.dll.mod`.
+`Mods\EnshroudedModLoader\mystudio\mystudio_mymod.dll` and `mystudio_mymod.dll.mod`.
 Its ID is `mystudio/mystudio_mymod.dll`. Keep this stable after publication or
 provide a profile/settings migration. The DLL basename must be unique even
 among DLLs installed in other subdirectories.
@@ -163,7 +163,7 @@ gameplay or install hooks inside DllMain.
 A third-party support library is another x64 DLL with its own manifest:
 
 ```text
-Mods/
+Mods/EnshroudedModLoader/
   mystudio/
     mystudio_mymod.dll
     mystudio_mymod.dll.mod
@@ -226,7 +226,7 @@ into `Enshrouded\Mods` separately.
 Enshrouded/
   enshrouded.exe
   dinput8.dll
-  Mods/
+  Mods/EnshroudedModLoader/
     mystudio/
       mystudio_mymod.dll
       mystudio_mymod.dll.mod
@@ -265,7 +265,7 @@ hot unloading. Replace binaries only while the game is closed.
 | Manifest refused | Exact `.dll.mod` name, UTF-8, keys/types/values, validator |
 | Load refused | x64 DLL, C exports, declared dependencies and exact versions |
 | Setting missing | `setting=` line, 16-setting limit, installed manifest |
-| Translation missing | Loader 0.6.10+, `text` keys, game language, fallback chain |
+| Translation missing | Loader 0.6.12+, `text` keys, game language, fallback chain |
 | Settings have no effect | Configure parsing, required restart, correct world |
 | Listed mod has no effect | Successful Initialize, logs, implemented engine adapter |
 | Restart required | Completely exit the process, then relaunch |

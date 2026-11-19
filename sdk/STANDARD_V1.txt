@@ -1,5 +1,5 @@
 MOD STANDARD — Enshrouded ModLoader — Version 1
-Project contract: existing ABI 1, documented November 13, 2026; updated for 0.6.11.
+Project contract: existing ABI 1, documented November 13, 2026; updated for 0.6.12.
 This is the normative reference for internal and third-party mods.
 It is not an official Keen Games standard or an official game API.
 
@@ -13,7 +13,7 @@ contract and verify their game's and loader's supported versions.
 There are two independent versions:
 - ENSHROUDED_PACKAGE_V1: manifest syntax.
 - abi=1: binary function and context interface.
-The mod's version=... is independent of both. The current loader is 0.6.11,
+The mod's version=... is independent of both. The current loader is 0.6.12,
 pinned to the executable SHA-256 in src/loader.cpp. Acceptance of a manifest
 does not validate a mod's own native offsets.
 
@@ -21,7 +21,7 @@ does not validate a mod's own native offsets.
 
 Recommended layout, extracted into the game directory:
 
-Mods/
+Mods/EnshroudedModLoader/
   author/
     author_mymod.dll
     author_mymod.dll.mod
@@ -32,10 +32,10 @@ must also be unique throughout the dependency graph, even across directories.
 A mod does not distribute its own dinput8.dll; that file belongs to the loader.
 Sources, README files and licenses may be supplied alongside the package.
 
-The mod ID is its DLL path relative to Mods, normalized to lowercase and /.
+The mod ID is its DLL path relative to Mods/EnshroudedModLoader, normalized to lowercase and /.
 Example: author/author_mymod.dll. Keep it stable. Renaming or moving a mod
 changes its identity in world profiles and settings and requires explicit
-migration. Absolute paths, .. traversal, NTFS streams and paths outside Mods
+migration. Absolute paths, .. traversal, NTFS streams and paths outside Mods/EnshroudedModLoader
 are rejected. Physical aliases and ambiguous DLL names fail preflight.
 
 3. Manifest (UTF-8, optional BOM, LF or CRLF)
@@ -57,7 +57,7 @@ not semantic-version ranges.
 Optional dependency, repeatable for distinct IDs:
 require=author/author_support.dll@1.0.0
 
-Paths are relative to Mods, not to the declaring DLL's directory. A required
+Paths are relative to Mods/EnshroudedModLoader, not to the declaring DLL's directory. A required
 kind=mod dependency must be explicitly enabled. A support DLL declares
 kind=library and loads automatically when required. It has its own manifest,
 no settings and no EnshroudedModInitialize export.
@@ -155,7 +155,7 @@ conflicts. It cannot prevent DLLs from loading additional code themselves.
 
 1) Use the public header and start from sdk/example.
 2) Build Windows x64. The example uses /MT to reduce external runtime dependencies.
-3) Package the DLL, manifest and declared dependencies under Mods.
+3) Package the DLL, manifest and declared dependencies under Mods/EnshroudedModLoader.
 4) Run the common validator without launching the game:
    build/validate_mod_package.exe <package-root-containing-Mods> author/author_mymod.dll
    Add other enabled/required mod IDs as arguments. Libraries resolve automatically.
@@ -169,7 +169,7 @@ is not a separate rule set. Test_A/Test_B are development fixtures using the
 same public header, manifests, preflight and lifetime rules as other mods.
 They are not included in the player distribution.
 
-9. Localization (manifest extension, ModLoader 0.6.10+)
+9. Localization (manifest extension, ModLoader 0.6.12+)
 
 Player-facing text follows the language selected in Enshrouded, not Windows.
 IDs and saved values remain stable. ABI 1 is unchanged. Old manifests remain
@@ -203,5 +203,5 @@ not imply additional supported interface translations. supportedLanguages
 lists the actual native IDs; these are not the contiguous range 0..14.
 
 See LOCALISATION.txt for the full procedure and strict 15-language catalogue
-compiler supplied with SDK 0.6.11. build-sdk.cmd tests the bilingual example
+compiler supplied with SDK 0.6.12. build-sdk.cmd tests the bilingual example
 and verifies that changing labels does not change saved values.

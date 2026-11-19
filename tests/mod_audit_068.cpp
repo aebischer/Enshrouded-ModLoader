@@ -16,7 +16,7 @@ static void manifest(const std::filesystem::path& path,const std::string& extra=
 }
 int main() {
  const auto root=std::filesystem::current_path()/("audit-068-"+std::to_string(GetCurrentProcessId()));
- folder=(root/L"ModLoader").wstring(); const auto mods=root/L"Mods";
+ folder=(root/L"ModLoader").wstring(); const auto mods=root/L"Mods"/L"EnshroudedModLoader";
  std::filesystem::create_directories(mods/L"a.dll.ini");
  const std::string world(32,'a'); std::string error;
  for(const auto* id:{L"a.dll",L"a.dll.ini/b.dll"}) {

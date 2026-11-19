@@ -16,3 +16,7 @@ under `build/`.
 
 The reusable SDK keeps its self-contained catalogue tests in `sdk/tests/`.
 Package validation and profile transfer utilities remain under `tools/`.
+
+`test_package_migration.ps1` exercises the dedicated package directory upgrade,
+byte-preserved settings/assets/markers, rollback and interrupted recovery,
+foreign packages, mixed directories and destination collisions.

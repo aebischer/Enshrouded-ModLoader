@@ -15,7 +15,7 @@ static void manifest(const std::filesystem::path& path,const std::string& extra)
 int main() {
     const auto root=std::filesystem::current_path()/("audit-067-"+std::to_string(GetCurrentProcessId()));
     folder=(root/L"ModLoader").wstring();
-    const auto mods=root/L"Mods"; std::filesystem::create_directories(mods);
+    const auto mods=root/L"Mods"/L"EnshroudedModLoader"; std::filesystem::create_directories(mods);
     const auto dll=mods/L"mod_test_plugin.dll";
     std::filesystem::copy_file(std::filesystem::current_path()/L"mod_test_plugin.dll",dll);
     const std::string world(32,'a'); std::string error;

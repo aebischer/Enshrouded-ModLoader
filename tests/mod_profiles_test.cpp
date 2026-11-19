@@ -32,10 +32,10 @@ int wmain(int argc,wchar_t** argv) {
         }
         return 0;
     }
-    std::filesystem::create_directories(root/L"Mods"/L"nested");
-    std::filesystem::copy_file("mod_test_plugin.dll",root/L"Mods"/L"nested"/L"Probe.DLL");
-    std::filesystem::copy_file("mod_test_reject.dll",root/L"Mods"/L"ZReject.dll");
-    for(const auto& path:{root/L"Mods"/L"nested"/L"Probe.DLL",root/L"Mods"/L"ZReject.dll"})
+    std::filesystem::create_directories(root/L"Mods"/L"EnshroudedModLoader"/L"nested");
+    std::filesystem::copy_file("mod_test_plugin.dll",root/L"Mods"/L"EnshroudedModLoader"/L"nested"/L"Probe.DLL");
+    std::filesystem::copy_file("mod_test_reject.dll",root/L"Mods"/L"EnshroudedModLoader"/L"ZReject.dll");
+    for(const auto& path:{root/L"Mods"/L"EnshroudedModLoader"/L"nested"/L"Probe.DLL",root/L"Mods"/L"EnshroudedModLoader"/L"ZReject.dll"})
         std::ofstream(path.wstring()+L".mod")<<"ENSHROUDED_PACKAGE_V1\nkind=mod\nversion=1.0\nabi=1\n";
     assert(worldId(A)==worldId("0204-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
     assert(worldId("../invalid").empty());

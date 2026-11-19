@@ -2,11 +2,11 @@
 #include <cassert>
 int main() {
     const auto root=std::filesystem::current_path()/("empty-mods-test-"+std::to_string(GetCurrentProcessId()));
-    std::filesystem::create_directories(root/L"Mods");
+    std::filesystem::create_directories(root/L"Mods"/L"EnshroudedModLoader");
     folder=(root/L"ModLoader").wstring();
     const auto source=std::filesystem::current_path()/L"test-mods";
     for(const auto* name:{L"Test_A.dll",L"Test_B.dll",L"Test_A.dll.mod",L"Test_B.dll.mod"})
-        std::filesystem::copy_file(source/name,root/L"Mods"/name);
+        std::filesystem::copy_file(source/name,root/L"Mods"/L"EnshroudedModLoader"/name);
     const std::string world(32,'a'),other(32,'b');
     std::string error;
     assert(saveProfile(world,{"test_a.dll","test_b.dll"},error));

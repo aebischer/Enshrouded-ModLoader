@@ -85,9 +85,9 @@ int wmain(int argc,wchar_t** argv) {
         assert(logText.find("Test_B configuration monde="+world+" :\n"+expectedB)!=std::string::npos);
         return 0;
     }
-    std::filesystem::create_directories(root/L"Mods");
+    std::filesystem::create_directories(root/L"Mods"/L"EnshroudedModLoader");
     const auto source=std::filesystem::current_path()/L"test-mods";
-    for(const auto* name:{L"Test_A.dll",L"Test_A.dll.mod",L"Test_B.dll",L"Test_B.dll.mod"}) std::filesystem::copy_file(source/name,root/L"Mods"/name);
+    for(const auto* name:{L"Test_A.dll",L"Test_A.dll.mod",L"Test_B.dll",L"Test_B.dll.mod"}) std::filesystem::copy_file(source/name,root/L"Mods"/L"EnshroudedModLoader"/name);
     Package pa,pb; assert(readPackage("test_a.dll",pa,error) && readPackage("test_b.dll",pb,error));
     assert(pa.settings.size()==4 && pb.settings.size()==4);
     SettingValues va,vb;

@@ -42,9 +42,9 @@ int main(int argc,char** argv) {
     toggleMod("other.dll"); readProfile(key,actual,error);
     std::cout<<"Concurrent external selection preserved: "<<actual.count("external.dll")<<"\n";
     std::cout<<"Zero world GUID accepted: "<<!worldId(std::string(32,'0')).empty()<<"\n";
-    std::filesystem::create_directories(root/L"Mods");
+    std::filesystem::create_directories(root/L"Mods"/L"EnshroudedModLoader");
     for(const auto* name:{L"audit_parent.dll",L"audit_dependency.dll"})
-        std::filesystem::copy_file(std::filesystem::current_path()/name,root/L"Mods"/name);
+        std::filesystem::copy_file(std::filesystem::current_path()/name,root/L"Mods"/L"EnshroudedModLoader"/name);
     saveProfile(key,{"audit_parent.dll"},error);
     std::cout<<"Parent only profile starts: "<<prepareWorldMods(key,error)<<" error="<<error<<"\n";
     auto dependency=GetModuleHandleW(L"audit_dependency.dll");

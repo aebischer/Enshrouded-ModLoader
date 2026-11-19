@@ -1,10 +1,10 @@
 # World profiles and loading lifecycle
 
-Normative reference: [SDK V1](../sdk/STANDARD_V1.txt). Current loader: 0.6.11.
+Normative reference: [SDK V1](../sdk/STANDARD_V1.txt). Current loader: 0.6.12.
 
 ## Packages
 
-Install a DLL under `Mods/` with its adjacent `name.dll.mod` manifest:
+Install a DLL under `Mods/EnshroudedModLoader/` with its adjacent `name.dll.mod` manifest:
 
 ```ini
 ENSHROUDED_PACKAGE_V1
@@ -14,7 +14,7 @@ abi=1
 require=mymod/support.dll@1.0
 ```
 
-Optional `require` paths are relative to Mods, use `/` and specify exact versions.
+Optional `require` paths are relative to Mods/EnshroudedModLoader, use `/` and specify exact versions.
 Unknown keys, duplicates, unsupported ABI/version syntax and cycles are rejected.
 Limits: depth 64, 1,024 modules, 64 direct dependencies and a 16 KiB manifest.
 
