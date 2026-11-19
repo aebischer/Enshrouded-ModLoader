@@ -27,7 +27,7 @@ git clone https://github.com/aebischer/Enshrouded-ModLoader.git
 cd Enshrouded-ModLoader
 build.cmd
 build-sdk.cmd
-test-mod-i18n.cmd
+tests/test-mod-i18n.cmd
 ```
 
 | Output | Purpose |

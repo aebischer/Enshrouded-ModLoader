@@ -10,10 +10,10 @@ Passed at the time:
   execution, then actual sample loading with per-world settings.
 - Sample values messages=false, mode=Rapide and intensity=125.
 - Once-per-process initialization and reuse of the same session.
-- build-test-mods.cmd: both internal fixtures build/load through the SDK.
-- test-mod-settings.cmd: types, world/mod isolation, conflicts, persistence
+- tests/build-test-mods.cmd: both internal fixtures build/load through the SDK.
+- tests/test-mod-settings.cmd: types, world/mod isolation, conflicts, persistence
   and restart behavior with actual DLLs.
-- tools/analyze-loader.cmd: /W4 /analyze, no reported warning.
+- tests/analyze-loader.cmd: /W4 /analyze, no reported warning.
 - Validator rejects abi=999 with exit 1 and missing arguments with exit 2.
 - Static validation of the two installed mods, compatible ABI 1.
 

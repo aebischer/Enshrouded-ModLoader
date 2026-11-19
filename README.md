@@ -92,20 +92,20 @@ language of project documentation and technical diagnostics.
 
 The source catalogue is `assets/localization/loader.json`. The build validates
 every language and key before generating `src/loader_texts.h`.
-`test-mod-i18n.cmd` checks exact coverage; English fallback does not count as
+`tests/test-mod-i18n.cmd` checks exact coverage; English fallback does not count as
 a translation. New translations still need visual and linguistic review in-game.
 
 ## Validation
 
 After building:
 
-- `build-test-mods.cmd` builds Test_A/Test_B fixtures under `build/test-mods`
+- `tests/build-test-mods.cmd` builds Test_A/Test_B fixtures under `build/test-mods`
   only. Run it before settings and new-world tests; do not install these fixtures.
-- `test-mod-catalog.cmd`, `test-mod-profiles.cmd`, `test-mod-settings.cmd`.
-- `test-new-world-profiles.cmd`, `test-mod-hardening.cmd`, `test-mod-i18n.cmd`.
-- `tools/audit-mod-067.cmd`, `tools/audit-mod-068.cmd`.
-- `tools/analyze-loader.cmd` runs MSVC static analysis.
-- `tools/test_install.ps1` and `tools/audit-install-format-068.ps1` exercise
+- `tests/test-mod-catalog.cmd`, `tests/test-mod-profiles.cmd`, `tests/test-mod-settings.cmd`.
+- `tests/test-new-world-profiles.cmd`, `tests/test-mod-hardening.cmd`, `tests/test-mod-i18n.cmd`.
+- `tests/audit-mod-067.cmd`, `tests/audit-mod-068.cmd`.
+- `tests/analyze-loader.cmd` runs MSVC static analysis.
+- `tests/test_install.ps1` and `tests/audit-install-format-068.ps1` exercise
   installation in isolated directories.
 
 Some tests require a local supported game executable or machine-specific paths.

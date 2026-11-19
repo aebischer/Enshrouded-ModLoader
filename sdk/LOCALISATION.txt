@@ -85,7 +85,7 @@ text entries. There is no min_loader_version field in manifest V1.
 From the loader repository root:
   build.cmd
   build-sdk.cmd
-  test-mod-i18n.cmd
+  tests/test-mod-i18n.cmd
   build\validate_mod_package.exe PACKAGE_ROOT author/my_mod.dll
 PACKAGE_ROOT contains Mods, not the DLL directly. The validator checks settings
 translations without executing the mod DLL.
