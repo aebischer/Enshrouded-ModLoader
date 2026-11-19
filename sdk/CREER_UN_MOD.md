@@ -3,7 +3,7 @@
 This guide targets **ModLoader 0.6.11**, **manifest V1** and **ABI 1**.
 The [standard](STANDARD_V1.txt) defines the contract; the
 [public header](include/enshrouded_mod.h) defines the C signatures.
-The private repository requires access granted by its owner. Compiled player
+The repository is public and can be cloned without a GitHub account. Compiled player
 packages are available separately through GitHub Releases.
 
 The SDK lets a Windows x64 DLL be discovered, configured per world and

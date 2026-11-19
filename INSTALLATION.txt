@@ -41,6 +41,6 @@ The in-game interface supports all 15 game languages. This documentation and
 the installer use English. SHA256SUMS.txt in release packages lists file hashes
 for verification with Get-FileHash.
 
-Source, documentation and private downloads:
+Source, documentation and public downloads:
 https://github.com/aebischer/Enshrouded-ModLoader
-An authorized GitHub account is required.
+No GitHub account is required to view the source or download releases.

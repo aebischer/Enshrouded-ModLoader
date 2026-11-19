@@ -6,8 +6,7 @@ This independent project is not an official Keen Games SDK.
 
 For installation without compiling, download the ZIP from
 [Releases](https://github.com/aebischer/Enshrouded-ModLoader/releases) and follow
-[INSTALLATION.txt](INSTALLATION.txt). The repository and downloads are private;
-you need an authorized GitHub account. Mods are installed separately.
+[INSTALLATION.txt](INSTALLATION.txt). The repository and downloads are public; no GitHub account is required. Mods are installed separately.
 
 ## Install and use
 
