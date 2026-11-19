@@ -34,7 +34,7 @@ int wmain(int argc,wchar_t** argv) {
         return 0;
     }
     std::filesystem::create_directories(mods);
-    std::filesystem::create_directories(std::filesystem::path(folder)/L"worlds");
+    std::filesystem::create_directories(worldProfilesRoot());
     for(const auto* name:{L"audit_parent.dll",L"audit_dependency.dll",L"mod_test_plugin.dll",L"mod_test_throw.dll"})
         std::filesystem::copy_file(std::filesystem::current_path()/name,mods/name);
     manifest(mods/L"mod_test_plugin.dll"); manifest(mods/L"mod_test_throw.dll");

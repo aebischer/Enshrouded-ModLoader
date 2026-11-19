@@ -1,11 +1,11 @@
-# Enshrouded ModLoader 0.6.14
+# Enshrouded ModLoader 0.6.15
 
 Native Windows x64 mod loader for Enshrouded, with a **MODS** page in each
 world's **Edit** menu. Enabled mods and settings are stored separately for each world.
 This independent project is not an official Keen Games SDK.
 
 For installation without compiling, download the ZIP from
-[Releases](https://github.com/aebischer/Enshrouded-ModLoader/releases/tag/v0.6.14) and follow
+[Releases](https://github.com/aebischer/Enshrouded-ModLoader/releases/tag/v0.6.15) and follow
 [INSTALLATION.txt](INSTALLATION.txt). The repository and downloads are public; no GitHub account is required. Mods are installed separately.
 
 ## Automatic standalone / Kiln installation
@@ -59,7 +59,7 @@ enabled missing/broken packages still report errors.
 
 Run the current installer before copying updated mod packages. It moves recognized
 legacy package folders into the dedicated directory, preserving relative IDs,
-resources and saved package data. It does not rewrite `ModLoader/worlds`.
+resources and saved package data. It does not rewrite `Mods/EnshroudedModLoader/worlds`.
 Mixed folders (our packages and foreign DLLs), linked paths and destination
 collisions are refused without overwriting files. Installation failure rolls back
 both the proxy and package moves; an interrupted transaction is recovered on the
@@ -67,14 +67,14 @@ next installer run. Do not manually copy the proxy to perform this migration.
 
 ## World profiles and settings
 
-- `ModLoader/worlds/<GUID>.mods` stores enabled mods. A missing file means no
+- `Mods/EnshroudedModLoader/worlds/<GUID>.mods` stores enabled mods. A missing file means no
   enabled mods; the Enable controls are immediately available for any world.
-- `ModLoader/worlds/<GUID>.settings-v2/<SHA256-normalized-mod-id>.ini` stores a
+- `Mods/EnshroudedModLoader/worlds/<GUID>.settings-v2/<SHA256-normalized-mod-id>.ini` stores a
   mod's settings for that world, independently of whether it is enabled.
 - Deleting a file resets the corresponding choices. Invalid files cause an
   error instead of silently reverting to defaults. Legacy `.settings` files
   are migrated on first read without overwriting existing settings.
-- Back up the entire `ModLoader/worlds` directory with your worlds. Steam Cloud
+- Back up the entire `Mods/EnshroudedModLoader/worlds` directory with your worlds. Steam Cloud
   does not synchronize these profiles. The `.mods` transfer utility currently
   transfers activation profiles only, not settings, game saves or DLLs.
 
@@ -143,3 +143,10 @@ See [localization validation](docs/localization-validation.md) for the latest re
 
 The root `.gitignore` is an explicit publication allowlist. Add new project
 files to it before committing them.
+
+## World profiles migration (ModLoader 0.6.15)
+
+Run the loader Install.cmd before updating or starting the game. It migrates
+old ModLoader/worlds files to Mods/EnshroudedModLoader/worlds, with verified
+backups, conflict checks and restartable copying. Preserve the new worlds
+folder when updating mods. Use 0.6.15 or newer for this directory layout.

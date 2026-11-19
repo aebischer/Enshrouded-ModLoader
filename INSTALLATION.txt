@@ -1,4 +1,4 @@
-ENSHROUDED MODLOADER 0.6.14 â€” WINDOWS X64
+ENSHROUDED MODLOADER 0.6.15 â€” WINDOWS X64
 Development build â€” no compiler required for the release ZIP
 
 1. Close Enshrouded and back up your saves.
@@ -19,7 +19,7 @@ Enshrouded/
   dinput8.dll
   Mods/EnshroudedModLoader/      separately installed mods
   ModLoader/mod-loader.log      diagnostics
-  ModLoader/worlds/             per-world activation/settings
+  Mods/EnshroudedModLoader/worlds/             per-world activation/settings
   RandomWorld/                  installer receipts/recovery (historical name)
 
 The loader package does not include gameplay mods or test fixtures.
@@ -49,7 +49,7 @@ PACKAGE DIRECTORY (0.6.12)
 Mods/EnshroudedModLoader/<package>/<mod>.dll and <mod>.dll.mod.
 Run Install.cmd before copying updated mod packages. It migrates recognized old
 package folders from Mods, including resources and saved package data. Relative
-mod IDs, enabled choices and ModLoader/worlds settings remain unchanged.
+mod IDs, enabled choices and Mods/EnshroudedModLoader/worlds settings remain unchanged.
 Mixed folders, linked paths and destination collisions are refused. Separate
 mixed packages manually without renaming their relative IDs, then retry.
 Failed installation restores the old proxy and package locations. If interrupted,
@@ -74,6 +74,13 @@ TESTED KILN SETUP
 Install Kiln first, then run this Install.cmd. Copy CarryOn/Lantern only into
 Mods/EnshroudedModLoader, never into kiln/native or kiln/chain. Enable each mod
 in Edit world -> MODS. Kiln is optional; the same downloads work standalone.
-Solo validation: Kiln 0.2.0-dev.29.19-beta.1, ModLoader 0.6.14, CarryOn
+Solo validation: Kiln 0.2.0-dev.29.19-beta.1, ModLoader 0.6.15, CarryOn
 0.1.52-dev, Lantern 0.1.31-dev. Lantern light and equipped restoration were
 confirmed in game. Other frameworks and multiplayer remain uncertified.
+
+World profiles migration (ModLoader 0.6.15)
+
+Run the loader Install.cmd before updating or starting the game. It migrates
+old ModLoader/worlds files to Mods/EnshroudedModLoader/worlds, with verified
+backups, conflict checks and restartable copying. Preserve the new worlds
+folder when updating mods. Use 0.6.15 or newer for this directory layout.

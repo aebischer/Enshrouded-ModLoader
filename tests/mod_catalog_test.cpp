@@ -22,6 +22,11 @@ int main() {
     std::filesystem::create_directory(root/L"Mods"/L"OtherFramework");
     for(int i=0;i<8300;++i) std::ofstream(root/L"Mods"/L"OtherFramework"/std::to_wstring(i)) << "ignored";
     modPage=8; refreshMods();
+    std::filesystem::create_directories(worldProfilesRoot());
+    std::ofstream(worldProfilesRoot()/L"ignore.dll")<<"not a mod";
+    std::ofstream(worldProfilesRoot()/L"ignore.dll.mod")<<"ENSHROUDED_PACKAGE_V1\n";
+    for(int i=0;i<8300;++i) std::ofstream(worldProfilesRoot()/std::to_wstring(i))<<"settings";
+    refreshMods();
     assert(catalogError.empty() && modPage==0 && modFiles.size()==2);
     assert(modFiles[0]=="alpha.dll" && !catalog["alpha.dll"].valid);
     assert(modFiles[1]=="carrychest/carrychest.dll");

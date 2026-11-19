@@ -1,4 +1,4 @@
-# Unified loader: ModLoader 0.6.14 development
+# Unified loader: ModLoader 0.6.15 development
 
 ## One binary, automatic installation
 
@@ -20,7 +20,7 @@ modules or exclude drop-ins: enable `enshrouded-modloader` in Kiln if necessary.
 The installer does not override Kiln's profile policy or `.disabled` markers.
 
 Both modes resolve paths from the executable: `Mods/EnshroudedModLoader/` and
-`ModLoader/worlds/`. SDK ABI, mod IDs and settings are unchanged. CarryOn and
+`Mods/EnshroudedModLoader/worlds/`. SDK ABI, mod IDs and settings are unchanged. CarryOn and
 Lantern remain our per-world packages, not independent Kiln native modules.
 
 ## Migration and recovery

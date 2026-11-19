@@ -126,8 +126,8 @@ must be valid values. Boolean controls display localized Enabled/Disabled;
 choices and percentages use the native difficulty controls.
 
 Loader-owned storage:
-ModLoader/worlds/<GUID>.mods
-ModLoader/worlds/<GUID>.settings-v2/<SHA256-normalized-UTF8-mod-id>.ini
+Mods/EnshroudedModLoader/worlds/<GUID>.mods
+Mods/EnshroudedModLoader/worlds/<GUID>.settings-v2/<SHA256-normalized-UTF8-mod-id>.ini
 
 Settings persist while a mod is disabled. Missing files mean defaults; invalid
 files produce an error, not silent replacement. Mods should not depend directly

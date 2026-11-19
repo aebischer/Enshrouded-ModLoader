@@ -50,7 +50,17 @@ static bool boundedRead(const std::filesystem::path& path,size_t limit,std::stri
     if(!ReadFile(file.value,out.data(),static_cast<DWORD>(out.size()),&count,nullptr) || count!=out.size()) {out.clear(); return false;}
     return true;
 }
-static std::filesystem::path profilePath(const std::string& key) {return std::filesystem::path(folder)/L"worlds"/(worldId(key)+".mods");}
+static std::filesystem::path worldProfilesRoot() {return std::filesystem::path(folder).parent_path()/L"Mods"/L"EnshroudedModLoader"/L"worlds";}
+static void requireProfileMigrationComplete() {
+    const auto old=std::filesystem::path(folder)/L"worlds";
+    if(!std::filesystem::exists(old))return;
+    size_t count=0;
+    for(const auto& entry:std::filesystem::recursive_directory_iterator(old)) {
+        if(++count>8192 || (GetFileAttributesW(entry.path().c_str())&FILE_ATTRIBUTE_REPARSE_POINT) || !entry.is_directory())
+            throw std::runtime_error("Legacy world profiles remain; run Install.cmd to finish migration to Mods/EnshroudedModLoader/worlds.");
+    }
+}
+static std::filesystem::path profilePath(const std::string& key) {return worldProfilesRoot()/(worldId(key)+".mods");}
 static bool profileExists(const std::string& key) {
     std::error_code ec;
     return std::filesystem::exists(profilePath(key),ec) || bool(ec);

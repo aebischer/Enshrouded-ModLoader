@@ -1,8 +1,8 @@
-$ErrorActionPreference = 'Stop'
+﻿$ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $fixture = Join-Path $root ('build\transfer-test-'+[guid]::NewGuid().ToString('N'))
 $world = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
-$dir = Join-Path $fixture 'ModLoader\worlds'
+$dir = Join-Path $fixture 'Mods\EnshroudedModLoader\worlds'
 New-Item -ItemType Directory -Path $dir | Out-Null
 $profile = Join-Path $dir ($world+'.mods')
 [IO.File]::WriteAllText($profile,"ENSHROUDED_MODS_V1`ncarry/chest.dll`n",(New-Object Text.UTF8Encoding($false)))

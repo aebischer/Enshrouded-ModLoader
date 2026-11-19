@@ -151,6 +151,7 @@ static void refreshMods() {
         while(!ec && it!=end) {
             if(++visited>8192 || GetTickCount64()>deadline) {catalogError=loaderText("err.scan_limit"); break;}
             if(it.depth()>=16) it.disable_recursion_pending();
+            if(it.depth()==0 && _wcsicmp(it->path().filename().c_str(),L"worlds")==0) {it.disable_recursion_pending();it.increment(ec);continue;}
             auto ext=it->path().extension().wstring();
             std::transform(ext.begin(),ext.end(),ext.begin(),[](wchar_t c){return towlower(c);});
             if(it->is_symlink(ec) || (GetFileAttributesW(it->path().c_str()) & FILE_ATTRIBUTE_REPARSE_POINT)) {
@@ -412,7 +413,8 @@ static DWORD initializeImpl() {
         throw std::runtime_error("Cannot pin loader");
     folder=exe; folder.resize(folder.find_last_of(L"\\/"));
     folder+=L"\\ModLoader"; CreateDirectoryW(folder.c_str(),nullptr);
-    log("ModLoader 0.6.14: automatic standalone / Kiln bootstrap");
+    requireProfileMigrationComplete();
+    log("ModLoader 0.6.15: automatic standalone / Kiln bootstrap");
     if(!matchingExe(exe)) throw std::runtime_error("Unsupported executable");
     imageBase=reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
     if(!unchangedHookTargets(exe)) throw std::runtime_error("Hook target modified in memory");

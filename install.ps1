@@ -1,4 +1,4 @@
-﻿param([string]$GamePath, [switch]$Uninstall)
+param([string]$GamePath, [switch]$Uninstall)
 $ErrorActionPreference = 'Stop'
 $expected = '5D9EF2F140B8ED49E30DBEE655841B89D08BAEC20F799A1817E171A18A850C77'
 if (-not $GamePath) {
@@ -42,6 +42,69 @@ $previous = Join-Path $data 'install.previous.dll'
 # Move only identified legacy packages. Relative package IDs and world settings stay unchanged.
 $modsRoot = Join-Path $GamePath 'Mods'
 $packageRoot = Join-Path $modsRoot 'EnshroudedModLoader'
+# Copy/verify first; retire legacy files only after a successful DLL installation.
+# Restarting any interrupted phase is idempotent. Different destination bytes
+# are always a conflict, never an invitation to overwrite player settings.
+$profileOld = Join-Path $GamePath 'ModLoader/worlds'
+$profileNew = Join-Path $packageRoot 'worlds'
+$profileFiles = @()
+function Get-ProfileFiles([string]$directory) {
+    Assert-PlainPath $directory
+    if (-not (Test-Path -LiteralPath $directory)) { return }
+    if (-not (Test-Path -LiteralPath $directory -PathType Container)) { throw 'Profile directory is a file' }
+    foreach($entry in Get-ChildItem -LiteralPath $directory -Force) {
+        Assert-PlainPath $entry.FullName
+        if($entry.PSIsContainer){ Get-ProfileFiles $entry.FullName }
+        else { $entry.FullName }
+    }
+}
+function Prepare-ProfileMigration {
+    Assert-PlainPath $profileOld; Assert-PlainPath $profileNew
+    $script:profileFiles=@()
+    foreach($file in @(Get-ProfileFiles $profileOld)) {
+        $relative=$file.Substring($profileOld.Length).TrimStart('\','/')
+        $destination=Join-Path $profileNew $relative
+        Assert-PlainPath $destination
+        $hash=(Get-FileHash -LiteralPath $file).Hash
+        if(Test-Path -LiteralPath $destination){
+            if(-not (Test-Path -LiteralPath $destination -PathType Leaf) -or (Get-FileHash -LiteralPath $destination).Hash -ne $hash){throw "Profile migration conflict; both copies preserved: $relative"}
+        }
+        $script:profileFiles+=@{source=$file;destination=$destination;relative=$relative;hash=$hash}
+    }
+    if(!$profileFiles.Count){return}
+    $backup=Join-Path $data ('worlds-backup.'+[guid]::NewGuid().ToString('N'))
+    Assert-PlainPath $backup
+    foreach($entry in $profileFiles){
+        $copy=Join-Path $backup $entry.relative
+        New-Item -ItemType Directory -Path (Split-Path $copy -Parent) -Force | Out-Null
+        Copy-Item -LiteralPath $entry.source -Destination $copy
+        if((Get-FileHash -LiteralPath $copy).Hash -ne $entry.hash){throw 'Profile backup hash mismatch'}
+    }
+    foreach($entry in $profileFiles){
+        if((Get-FileHash -LiteralPath $entry.source).Hash -ne $entry.hash){throw 'Profile changed during migration'}
+        if(Test-Path -LiteralPath $entry.destination){continue}
+        New-Item -ItemType Directory -Path (Split-Path $entry.destination -Parent) -Force | Out-Null
+        $temp=$entry.destination+'.migration.'+[guid]::NewGuid().ToString('N')
+        try {
+            Copy-Item -LiteralPath $entry.source -Destination $temp
+            if((Get-FileHash -LiteralPath $temp).Hash -ne $entry.hash){throw 'Profile copy hash mismatch'}
+            [IO.File]::Move($temp,$entry.destination)
+        } finally {if(Test-Path -LiteralPath $temp){Remove-Item -LiteralPath $temp}}
+    }
+    Write-Output "Profile backup verified: $backup"
+}
+function Complete-ProfileMigration {
+    # Verify the complete source set again before deleting any original file.
+    $current=@(Get-ProfileFiles $profileOld)
+    if($current.Count -ne $profileFiles.Count){throw 'Profile source set changed; originals retained'}
+    foreach($entry in $profileFiles){
+        Assert-PlainPath $entry.source;Assert-PlainPath $entry.destination
+        if((Get-FileHash -LiteralPath $entry.source).Hash -ne $entry.hash -or (Get-FileHash -LiteralPath $entry.destination).Hash -ne $entry.hash){throw 'Profile verification failed; originals retained'}
+    }
+    foreach($entry in $profileFiles){Remove-Item -LiteralPath $entry.source}
+    # Empty directories are harmless; never recursively delete player data.
+    Write-Output 'World profiles/settings now use Mods/EnshroudedModLoader/worlds.'
+}
 function Test-PackageHeader([string]$manifest) {
     if (-not (Test-Path -LiteralPath $manifest -PathType Leaf)) { return $false }
     Assert-PlainPath $manifest
@@ -268,7 +331,7 @@ function Install-DualMode([bool]$kiln) {
         Assert-LoaderBinary $bytes
         Assert-LoaderBinary $bytes @('kiln_native_init')
         if($kiln) {
-            $manifest=[Text.Encoding]::UTF8.GetBytes('{"format":1,"id":"enshrouded-modloader","version":"0.6.14","name":"Enshrouded ModLoader","side":"client","dlls":["modloader.dll"],"phase":"boot","init":"kiln_native_init","enabled":true,"kiln":">=0.2.0-dev","builds":["'+$expected+'"]}')
+            $manifest=[Text.Encoding]::UTF8.GetBytes('{"format":1,"id":"enshrouded-modloader","version":"0.6.15","name":"Enshrouded ModLoader","side":"client","dlls":["modloader.dll"],"phase":"boot","init":"kiln_native_init","enabled":true,"kiln":">=0.2.0-dev","builds":["'+$expected+'"]}')
             $changes[$nativeDll]=$bytes;$changes[$nativeManifest]=$manifest
             $changes[$nativeReceipt]=[Text.Encoding]::UTF8.GetBytes((@{dll=(Managed-Hash $bytes);manifest=(Managed-Hash $manifest)} | ConvertTo-Json -Compress))
         } else {
@@ -342,7 +405,7 @@ function Install-DualMode([bool]$kiln) {
         $backup=Join-Path $data ('dual-install.backup.'+[guid]::NewGuid().ToString('N')+'.json')
         [IO.File]::Move($journal,$backup)
     } catch { $failure=$_;Restore-DualInstall;throw $failure }
-    Write-Output ('ModLoader 0.6.14 '+$(if($Uninstall){'removed'}elseif($kiln){'installed for Kiln'}else{'installed standalone'})+'. Profiles and packages preserved.')
+    Write-Output ('ModLoader 0.6.15 '+$(if($Uninstall){'removed'}elseif($kiln){'installed for Kiln'}else{'installed standalone'})+'. Profiles and packages preserved.')
 }
 
 try {
@@ -355,7 +418,9 @@ if(Test-Path -LiteralPath $dll -PathType Leaf) {
 }
 if($kiln -or (Test-Path -LiteralPath (Join-Path $data 'kiln-installed.json'))) {
     if(Test-Path -LiteralPath $pending){throw 'Finish the interrupted standalone installation before changing loader mode.'}
+    if(-not $Uninstall){Prepare-ProfileMigration}
     Install-DualMode $kiln
+    if(-not $Uninstall){Complete-ProfileMigration}
     return
 }
 Restore-PendingInstall
@@ -380,6 +445,7 @@ foreach ($other in @('powrprof.dll','dbghelp.dll')) {
 $source = Join-Path $PSScriptRoot 'dist\dinput8.dll'
 if (-not (Test-Path -LiteralPath $source)) { throw 'Source DLL missing. Build the project or extract the complete release ZIP.' }
 if (Test-Path -LiteralPath $receipt -PathType Container) { throw 'The receipt path is a directory. Installation was not changed.' }
+Prepare-ProfileMigration
 $packageMoves = @(Get-LegacyMoves)
 foreach ($name in $packageMoves) {
     $paths = Get-MovePaths $name
@@ -421,5 +487,6 @@ try {
         if (Test-Path -LiteralPath $tempFile -PathType Leaf) { Remove-Item -LiteralPath $tempFile -ErrorAction SilentlyContinue }
     }
 }
-Write-Host "ModLoader 0.6.14 installed and verified in $GamePath."
+Complete-ProfileMigration
+Write-Host "ModLoader 0.6.15 installed and verified in $GamePath."
 } finally { $installLock.Dispose() }

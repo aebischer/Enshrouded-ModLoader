@@ -32,6 +32,16 @@ int wmain(int argc,wchar_t** argv) {
         }
         return 0;
     }
+    requireProfileMigrationComplete();
+    const auto old=root/L"ModLoader"/L"worlds";
+    std::filesystem::create_directories(old/L"empty-settings");
+    requireProfileMigrationComplete();
+    std::ofstream(old/L"legacy.mods")<<"keep";
+    bool migrationRefused=false;
+    try {requireProfileMigrationComplete();}catch(const std::runtime_error&){migrationRefused=true;}
+    assert(migrationRefused);
+    std::filesystem::remove(old/L"legacy.mods");
+    requireProfileMigrationComplete();
     std::filesystem::create_directories(root/L"Mods"/L"EnshroudedModLoader"/L"nested");
     std::filesystem::copy_file("mod_test_plugin.dll",root/L"Mods"/L"EnshroudedModLoader"/L"nested"/L"Probe.DLL");
     std::filesystem::copy_file("mod_test_reject.dll",root/L"Mods"/L"EnshroudedModLoader"/L"ZReject.dll");
@@ -49,7 +59,7 @@ int wmain(int argc,wchar_t** argv) {
     assert(readProfile(A,restored,error) && restored==active);
     assert(readProfile(B,restored,error) && restored.empty());
     // An interrupted write cannot replace the previous complete profile.
-    std::ofstream(root/L"ModLoader"/L"worlds"/(worldId(A)+".mods.tmp"))<<"partial";
+    std::ofstream(worldProfilesRoot()/(worldId(A)+".mods.tmp"))<<"partial";
     assert(readProfile(A,restored,error) && restored==active);
     selectedKey=A; openProfile(A); refreshMods();
     assert(isEnabled("nested/Probe.DLL"));
@@ -74,7 +84,7 @@ int wmain(int argc,wchar_t** argv) {
     selectedKey=B; openProfile(B); refreshMods();
     assert(std::find(modFiles.begin(),modFiles.end(),"missing.dll")!=modFiles.end());
     assert(toggleMod("missing.dll"));
-    std::ofstream(root/L"ModLoader"/L"worlds"/(worldId(B)+".mods"))<<"broken";
+    std::ofstream(worldProfilesRoot()/(worldId(B)+".mods"))<<"broken";
     assert(!readProfile(B,restored,error));
     puts("Profiles: isolated worlds, atomic persistence, toggles, real DLL init, restart, partial failure and missing mods passed.");
 }

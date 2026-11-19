@@ -72,6 +72,7 @@ int wmain(int argc,wchar_t** argv) {
     assert(guard.config[0xc3c]==0);
     const auto root=argc>2?std::filesystem::path(argv[2]):std::filesystem::current_path()/("mod-settings-test-"+std::to_string(GetCurrentProcessId()));
     folder=(root/L"ModLoader").wstring();
+    std::filesystem::create_directories(folder);
     std::string error;
     if(argc>2) {
         if(std::wstring(argv[1])==L"--bad") {assert(!prepareWorldMods(B,error) && residentMods.empty() && !sessionTainted); return 0;}

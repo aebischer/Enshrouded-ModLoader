@@ -1,7 +1,7 @@
 {
   "format": 1,
   "id": "enshrouded-modloader",
-  "version": "0.6.14",
+  "version": "0.6.15",
   "name": "Enshrouded ModLoader",
   "side": "client",
   "dlls": ["modloader.dll"],

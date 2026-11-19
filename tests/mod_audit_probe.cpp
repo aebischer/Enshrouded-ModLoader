@@ -16,10 +16,10 @@ int main(int argc,char** argv) {
         return 0;
     }
     const auto root=std::filesystem::current_path()/("audit-profiles-"+std::to_string(GetCurrentProcessId()));
-    std::filesystem::create_directories(root/L"ModLoader"/L"worlds");
+    std::filesystem::create_directories(worldProfilesRoot());
     folder=(root/L"ModLoader").wstring();
     const std::string key="0101-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-    const auto path=root/L"ModLoader"/L"worlds"/(worldId(key)+".mods");
+    const auto path=worldProfilesRoot()/(worldId(key)+".mods");
     std::string error; std::set<std::string> actual;
     auto write=[&](const std::string& value) {std::ofstream out(path,std::ios::binary); out<<value;};
     write("ENSHROUDED_MODS_V1\r\na.dll\r\n");

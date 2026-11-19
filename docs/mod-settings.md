@@ -32,7 +32,7 @@ The native `c3a` flag enables selector arrows (introduced in 0.6.2).
 ## Storage
 
 Current path:
-`ModLoader/worlds/<GUID>.settings-v2/<SHA256-normalized-UTF8-mod-id>.ini`.
+`Mods/EnshroudedModLoader/worlds/<GUID>.settings-v2/<SHA256-normalized-UTF8-mod-id>.ini`.
 The digest is 64 lowercase hexadecimal characters. Content remains
 `ENSHROUDED_SETTINGS_V1`. Legacy `<GUID>.settings/<mod-path.dll>.ini` files are
 moved under locks on first read without overwriting an existing destination.
@@ -46,7 +46,7 @@ flush a unique temporary file, then replace atomically. Disabled mods keep their
 settings. Deleting a settings file and refreshing restores defaults. Activation
 profiles `.mods` are independent.
 
-Back up the entire `ModLoader/worlds` directory. The activation-profile transfer
+Back up the entire `Mods/EnshroudedModLoader/worlds` directory. The activation-profile transfer
 utility transports only `.mods`, not settings, save data or DLLs.
 
 ## Initialization and restart

@@ -79,7 +79,7 @@ Remove-Item -LiteralPath (Join-Path $game 'dinput8.dll')
 Run $true
 if(Test-Path (Join-Path $game $native)){throw 'Native duplicate after standalone switch'}
 if((Hash 'dinput8.dll') -ne (Get-FileHash $sourceDll).Hash){throw 'Standalone switch failed'}
-foreach($file in $keep.Keys){if((Get-FileHash $file).Hash -ne $keep[$file]){throw "Preserved file changed: $file"}}
+foreach($file in $keep.Keys){if((Get-FileHash ($file.Replace("ModLoader\worlds\","Mods\EnshroudedModLoader\worlds\"))).Hash -ne $keep[$file]){throw "Preserved file changed: $file"}}
 if((Get-Content (Join-Path $game 'kiln/chain/foreign.dll') -Raw) -ne 'foreign chain sentinel'){throw 'Foreign loader changed'}
 Put 'dinput8.dll' 'foreign proxy'
 Run $false

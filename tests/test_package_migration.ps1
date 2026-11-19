@@ -34,7 +34,7 @@ $saved = @{}
 foreach($file in Get-ChildItem -LiteralPath $target -Recurse -File) { $saved[$file.FullName] = (Get-FileHash -LiteralPath $file.FullName).Hash }
 Install $true
 foreach($old in $saved.Keys) {
-    $new=$old
+    $new=$old.Replace("ModLoader\worlds\","Mods\EnshroudedModLoader\worlds\")
     foreach($name in @('carryon','lantern')) { $new=$new.Replace((Join-Path $legacy "$name\"),(Join-Path $dedicated "$name\")) }
     foreach($name in @('loose.dll','loose.dll.mod')) { if($old -eq (Join-Path $legacy $name)) { $new=Join-Path $dedicated $name } }
     if((Get-FileHash -LiteralPath $new).Hash -ne $saved[$old]) { throw "Changed file: $new" }
@@ -67,5 +67,5 @@ Package 'collision'
 Write-File (Join-Path $dedicated 'collision/keep.txt') 'destination sentinel'
 Install $false
 if(-not (Test-Path (Join-Path $legacy 'collision/collision.dll')) -or (Get-Content (Join-Path $dedicated 'collision/keep.txt')) -ne 'destination sentinel') { throw 'Collision overwritten' }
-foreach($path in @($world,$settings)) { if((Get-FileHash $path).Hash -ne $saved[$path]) { throw 'World settings changed' } }
+foreach($path in @($world,$settings)) { if((Get-FileHash ($path.Replace("ModLoader\worlds\","Mods\EnshroudedModLoader\worlds\"))).Hash -ne $saved[$path]) { throw 'World settings changed' } }
 Write-Output 'PASS: package migration, IDs/settings/assets/markers preserved, foreign packages ignored, reinstall, rollback, interrupted recovery, mixed-folder and collision refusal.'

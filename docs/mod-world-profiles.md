@@ -40,7 +40,7 @@ Package files and write access to the game directory remain trust boundaries.
 
 ## Profiles
 
-`ModLoader/worlds/<GUID>.mods` contains:
+`Mods/EnshroudedModLoader/worlds/<GUID>.mods` contains:
 
 ```text
 ENSHROUDED_MODS_V1

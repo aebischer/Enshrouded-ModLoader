@@ -3,7 +3,7 @@ using SettingValues=std::map<std::string,std::string>;
 static std::map<std::string,SettingValues> sessionSettings;
 static std::map<std::string,std::string> sessionManifests;
 static std::filesystem::path legacySettingsPath(const std::string& world,const std::string& id) {
-    return std::filesystem::path(folder)/L"worlds"/(worldId(world)+".settings")/std::filesystem::u8path(id+".ini");
+    return worldProfilesRoot()/(worldId(world)+".settings")/std::filesystem::u8path(id+".ini");
 }
 static std::filesystem::path settingsPath(const std::string& world,const std::string& id) {
     unsigned char digest[32]{}; BCRYPT_ALG_HANDLE algorithm=nullptr;
@@ -14,7 +14,7 @@ static std::filesystem::path settingsPath(const std::string& world,const std::st
     if(status<0) throw std::runtime_error("Settings identity unavailable");
     char name[65]{};
     for(size_t i=0;i<32;++i) sprintf_s(name+i*2,3,"%02x",digest[i]);
-    return std::filesystem::path(folder)/L"worlds"/(worldId(world)+".settings-v2")/(std::string(name)+".ini");
+    return worldProfilesRoot()/(worldId(world)+".settings-v2")/(std::string(name)+".ini");
 }
 // Move once, without replacement: deleting a migrated INI must restore defaults,
 // not resurrect an old copy. Corrupt legacy files retain their strict errors.

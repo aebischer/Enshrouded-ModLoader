@@ -11,7 +11,7 @@ foreach ($running in @(Get-Process enshrouded -ErrorAction SilentlyContinue)) {
     if (-not $running.Path -or $running.Path -eq (Join-Path $GamePath 'enshrouded.exe')) { throw 'Close the game before transferring a profile.' }
 }
 $utf8 = New-Object Text.UTF8Encoding($false, $true)
-$profile = Join-Path $GamePath ('ModLoader\worlds\' + $WorldId + '.mods')
+$profile = Join-Path $GamePath ('Mods\EnshroudedModLoader\worlds\' + $WorldId + '.mods')
 function Validate-Profile([byte[]]$bytes) {
     if ($bytes.Length -gt 1049664) { throw 'Profile is too large.' }
     $text = $utf8.GetString($bytes).TrimStart([char]0xFEFF)
