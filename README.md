@@ -1,12 +1,22 @@
-# Enshrouded ModLoader 0.6.12
+# Enshrouded ModLoader 0.6.14
 
 Native Windows x64 mod loader for Enshrouded, with a **MODS** page in each
 world's **Edit** menu. Enabled mods and settings are stored separately for each world.
 This independent project is not an official Keen Games SDK.
 
 For installation without compiling, download the ZIP from
-[Releases](https://github.com/aebischer/Enshrouded-ModLoader/releases/tag/v0.6.12) and follow
+[Releases](https://github.com/aebischer/Enshrouded-ModLoader/releases/tag/v0.6.14) and follow
 [INSTALLATION.txt](INSTALLATION.txt). The repository and downloads are public; no GitHub account is required. Mods are installed separately.
+
+## Automatic standalone / Kiln installation
+
+One DLL supports both startup paths. `Install.cmd` detects Kiln's proxy exports:
+without Kiln it installs `dinput8.dll`; with Kiln it installs the **same binary**
+as `kiln/native/enshrouded-modloader/modloader.dll` plus a boot-phase manifest.
+Kiln's proxy is never replaced. Owned legacy chain copies are retired in the
+same recoverable transaction. Profiles, packages and SDK ABI are unchanged.
+See [setup and validation limits](docs/kiln-bootstrap.md). Full interoperability
+with other mods still requires real-runtime testing and hook coordination.
 
 ## Install and use
 

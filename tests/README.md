@@ -20,3 +20,12 @@ Package validation and profile transfer utilities remain under `tools/`.
 `test_package_migration.ps1` exercises the dedicated package directory upgrade,
 byte-preserved settings/assets/markers, rollback and interrupted recovery,
 foreign packages, mixed directories and destination collisions.
+
+`test-loader-kiln.cmd` checks native context validation, concurrent initialization,
+real passive DLL loading, duplicate copies, unsupported executable refusal and
+standalone proxy deferral behind a simulated Kiln proxy. It does not run Kiln
+or the actual game.
+
+`test_kiln_install.ps1` uses an isolated fake Kiln proxy to verify automatic mode
+selection, identical binary installation, legacy chain retirement, rollback,
+interrupted recovery, native removal and switching back to standalone.

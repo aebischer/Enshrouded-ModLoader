@@ -1,4 +1,4 @@
-ENSHROUDED MODLOADER 0.6.12 — WINDOWS X64
+ENSHROUDED MODLOADER 0.6.14 — WINDOWS X64
 Development build — no compiler required for the release ZIP
 
 1. Close Enshrouded and back up your saves.
@@ -56,3 +56,16 @@ Failed installation restores the old proxy and package locations. If interrupted
 run Install.cmd again for recovery before starting the game.
 Failure dialogs cover all 15 game languages, with English before the game locale
 is available. Technical logs and installation instructions remain in English.
+
+AUTOMATIC KILN DETECTION
+Install.cmd uses the same compiled DLL in either mode:
+- Without Kiln: <game>/dinput8.dll.
+- With Kiln: <game>/kiln/native/enshrouded-modloader/modloader.dll and native.json.
+It identifies Kiln by its PE export, without executing it, and preserves its proxy.
+An owned old chain copy is removed together with its chain entries; unknown DLLs
+are never removed. Keep RandomWorld receipts for automatic migration/recovery.
+Enable this native module in your Kiln profile (or allow native drop-ins).
+Kiln's disabled/no-mods policy is respected; our DLL does not bypass it.
+Uninstall.cmd removes our managed files, not Kiln, world settings or mod packages.
+If Kiln is removed, rerun Install.cmd to restore standalone startup.
+See docs/kiln-bootstrap.md for current runtime compatibility limits.

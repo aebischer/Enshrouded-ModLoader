@@ -1,0 +1,5 @@
+Kiln native C ABI headers (MIT).
+Source: https://github.com/frostdev-ops/kiln
+Commit: 55364c9 (local review checkout, 2026-11-19).
+Files: native/core/abi/kiln_api.h and kiln_native.h, unchanged.
+License: LICENSE.txt. No Kiln runtime is bundled.

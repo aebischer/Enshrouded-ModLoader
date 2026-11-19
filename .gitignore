@@ -108,3 +108,19 @@
 !/tests/README.md
 !/tests/test_package_migration.ps1
 !/docs/package-layout-0612.md
+
+# Kiln bootstrap integration
+!/src/loader_bootstrap.h
+!/assets/kiln/native.json
+!/docs/kiln-bootstrap.md
+!/third_party/kiln/kiln_api.h
+!/third_party/kiln/kiln_native.h
+!/third_party/kiln/LICENSE.txt
+!/third_party/kiln/UPSTREAM.txt
+!/tests/loader_bootstrap_test.cpp
+!/tests/loader_kiln_dll_test.cpp
+!/tests/loader_kiln_proxy_fixture.cpp
+!/tests/loader_kiln_chain_test.cpp
+!/tests/test-loader-kiln.cmd
+
+!/tests/test_kiln_install.ps1

@@ -18,16 +18,6 @@ if (-not (Test-Path -LiteralPath $exe)) { throw 'Enshrouded.exe was not found.' 
 foreach ($running in @(Get-Process enshrouded -ErrorAction SilentlyContinue)) {
     if (-not $running.Path -or $running.Path -eq $exe) { throw 'Close Enshrouded before continuing.' }
 }
-$dll = Join-Path $GamePath 'dinput8.dll'
-$data = Join-Path $GamePath 'RandomWorld'
-$receipt = Join-Path $data 'installed.sha256'
-New-Item -ItemType Directory -Path $data -Force | Out-Null
-$installLock = [IO.File]::Open((Join-Path $data 'install.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
-$pending = Join-Path $data 'install.pending.json'
-$previous = Join-Path $data 'install.previous.dll'
-# Move only identified legacy packages. Relative package IDs and world settings stay unchanged.
-$modsRoot = Join-Path $GamePath 'Mods'
-$packageRoot = Join-Path $modsRoot 'EnshroudedModLoader'
 function Assert-PlainPath([string]$path) {
     $full = [IO.Path]::GetFullPath($path)
     $boundary = [IO.Path]::GetFullPath($GamePath).TrimEnd('\') + '\'
@@ -40,6 +30,18 @@ function Assert-PlainPath([string]$path) {
         $cursor = Split-Path $cursor -Parent
     }
 }
+$dll = Join-Path $GamePath 'dinput8.dll'
+$data = Join-Path $GamePath 'RandomWorld'
+$receipt = Join-Path $data 'installed.sha256'
+Assert-PlainPath $dll
+Assert-PlainPath $data
+New-Item -ItemType Directory -Path $data -Force | Out-Null
+$installLock = [IO.File]::Open((Join-Path $data 'install.lock'), [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
+$pending = Join-Path $data 'install.pending.json'
+$previous = Join-Path $data 'install.previous.dll'
+# Move only identified legacy packages. Relative package IDs and world settings stay unchanged.
+$modsRoot = Join-Path $GamePath 'Mods'
+$packageRoot = Join-Path $modsRoot 'EnshroudedModLoader'
 function Test-PackageHeader([string]$manifest) {
     if (-not (Test-Path -LiteralPath $manifest -PathType Leaf)) { return $false }
     Assert-PlainPath $manifest
@@ -100,7 +102,7 @@ function Restore-PackageMoves($record) {
 }
 function Restore-PendingInstall {
     if (-not (Test-Path -LiteralPath $pending)) { return }
-    $record = Get-Content -LiteralPath $pending -Raw | ConvertFrom-Json
+    $record = Get-Content -LiteralPath $pending -Raw -Encoding UTF8 | ConvertFrom-Json
     if ($record.newHash -notmatch '^[A-F0-9]{64}$' -or ($record.oldHash -and $record.oldHash -notmatch '^[A-F0-9]{64}$')) { throw 'Invalid recovery journal.' }
     $current = if (Test-Path -LiteralPath $dll -PathType Leaf) { (Get-FileHash -LiteralPath $dll).Hash } else { '' }
     if ($current -and $current -ne $record.newHash -and $current -ne $record.oldHash) { throw 'The DLL changed during an interrupted installation. Recovery refused.' }
@@ -120,7 +122,7 @@ function Restore-PendingInstall {
     Restore-PackageMoves $record
     Remove-Item -LiteralPath $pending
 }
-function Assert-LoaderBinary([byte[]]$bytes) {
+function Assert-LoaderBinary([byte[]]$bytes, [string[]]$required=@('DirectInput8Create','DllCanUnloadNow','DllGetClassObject','DllRegisterServer','DllUnregisterServer','GetdfDIJoystick')) {
     function Need([long]$offset,[long]$count) {
         if($offset -lt 0 -or $count -lt 0 -or $offset -gt $bytes.Length -or $count -gt $bytes.Length-$offset) {throw 'Truncated DLL or invalid PE table.'}
     }
@@ -150,11 +152,10 @@ function Assert-LoaderBinary([byte[]]$bytes) {
     if($exports -eq 0 -or $exportSize -lt 40){throw 'Loader exports are missing.'}
     $e=Offset $exports 40
     $functions=[long](U32 ($e+20)); $names=[long](U32 ($e+24))
-    if($functions -lt 6 -or $functions -gt 65536 -or $names -lt 6 -or $names -gt 65536){throw 'Invalid loader exports.'}
+    if($functions -lt $required.Count -or $functions -gt 65536 -or $names -lt $required.Count -or $names -gt 65536){throw 'Invalid loader exports.'}
     $f=Offset (U32 ($e+28)) ($functions*4)
     $n=Offset (U32 ($e+32)) ($names*4)
     $ord=Offset (U32 ($e+36)) ($names*2)
-    $required=@('DirectInput8Create','DllCanUnloadNow','DllGetClassObject','DllRegisterServer','DllUnregisterServer','GetdfDIJoystick')
     $found=@{}
     for($i=0;$i -lt $names;$i++) {
         $nameRva=[long](U32 ($n+4*$i)); $name=''; $ended=$false
@@ -180,7 +181,183 @@ function Assert-LoaderBinary([byte[]]$bytes) {
     }
     foreach($name in $required){if(-not $found.ContainsKey($name)){throw "Missing loader export: $name"}}
 }
+# Called only after all shared helpers are defined and while install.lock is held.
+function Get-ManagedBytesHash([byte[]]$bytes) {
+    $sha=[Security.Cryptography.SHA256]::Create()
+    try { return ([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-','') } finally {$sha.Dispose()}
+}
+function Get-ManagedPath([string]$relative) {
+    if($relative -notmatch '^(dinput8\.dll|RandomWorld/(installed\.sha256|kiln-installed\.json)|kiln/native/enshrouded-modloader/(modloader\.dll|native\.json)|kiln/chain/[^/\\:]+\.dll|kiln/chain\.ini|dinput8-chain\.ini)$') {throw "Invalid managed path: $relative"}
+    $path=Join-Path $GamePath $relative
+    Assert-PlainPath $path
+    return $path
+}
+function Read-ManagedFile([string]$relative) {
+    $path=Get-ManagedPath $relative
+    if(Test-Path -LiteralPath $path) {
+        if(-not (Test-Path -LiteralPath $path -PathType Leaf) -or (Get-Item -LiteralPath $path).Length -gt 128MB){throw "Invalid managed file: $path"}
+        return ,([IO.File]::ReadAllBytes($path))
+    }
+    return $null
+}
+function Write-ManagedFile([string]$relative,$bytes) {
+    $path=Get-ManagedPath $relative
+    if($null -eq $bytes) {if(Test-Path -LiteralPath $path){Remove-Item -LiteralPath $path};return}
+    New-Item -ItemType Directory -Path (Split-Path $path -Parent) -Force | Out-Null
+    $temp=$path+'.'+[guid]::NewGuid().ToString('N')+'.new'
+    try {
+        [IO.File]::WriteAllBytes($temp,[byte[]]$bytes)
+        if(Test-Path -LiteralPath $path){[IO.File]::Replace($temp,$path,$temp+'.old')}else{[IO.File]::Move($temp,$path)}
+    } finally {foreach($p in @($temp,($temp+'.old'))){if(Test-Path -LiteralPath $p){Remove-Item -LiteralPath $p}}}
+}
+function Managed-Hash($bytes) {if($null -eq $bytes){return ''};return Get-ManagedBytesHash $bytes}
+function Restore-DualInstall {
+    $journal=Join-Path $data 'dual-install.pending.json'
+    Assert-PlainPath $journal
+    if(-not (Test-Path -LiteralPath $journal)){return}
+    if((Get-Item -LiteralPath $journal).Length -gt 256MB){throw 'Recovery journal too large'}
+    $record=Get-Content -LiteralPath $journal -Raw -Encoding UTF8 | ConvertFrom-Json
+    if($record.format -ne 1 -or @($record.files).Count -gt 128){throw 'Invalid dual installation journal'}
+    $seen=@{}
+    # Validate the entire journal before restoring anything. Never accept a foreign change.
+    foreach($entry in $record.files) {
+        $null=Get-ManagedPath $entry.path
+        if($seen.ContainsKey($entry.path)){throw 'Duplicate recovery path'};$seen[$entry.path]=$true
+        $before=if($null -eq $entry.before){$null}else{[Convert]::FromBase64String($entry.before)}
+        if((Managed-Hash $before) -ne $entry.beforeHash -or ($entry.afterHash -and $entry.afterHash -notmatch '^[A-F0-9]{64}$')){throw 'Invalid recovery checksum'}
+        $current=Managed-Hash (Read-ManagedFile $entry.path)
+        if($current -ne $entry.beforeHash -and $current -ne $entry.afterHash){throw "File changed outside installer: $($entry.path)"}
+    }
+    foreach($name in @($record.packageMoves)) {
+        if(-not $name){continue};$paths=Get-MovePaths $name
+        if((Test-Path -LiteralPath $paths[0]) -and (Test-Path -LiteralPath $paths[1])){throw 'Recovery package collision'}
+        if(!(Test-Path -LiteralPath $paths[0]) -and !(Test-Path -LiteralPath $paths[1])){throw 'Recovery package missing'}
+    }
+    $reverse=@($record.files);[array]::Reverse($reverse)
+    foreach($entry in $reverse) {
+        if((Managed-Hash (Read-ManagedFile $entry.path)) -eq $entry.beforeHash){continue}
+        $before=if($null -eq $entry.before){$null}else{[Convert]::FromBase64String($entry.before)}
+        Write-ManagedFile $entry.path $before
+    }
+    Restore-PackageMoves $record
+    Remove-Item -LiteralPath $journal
+}
+function Install-DualMode([bool]$kiln) {
+    $nativeReceipt='RandomWorld/kiln-installed.json'
+    $nativeDll='kiln/native/enshrouded-modloader/modloader.dll'
+    $nativeManifest='kiln/native/enshrouded-modloader/native.json'
+    $oldNative=Read-ManagedFile $nativeReceipt
+    $nativeRecord=if($null -ne $oldNative){[Text.Encoding]::UTF8.GetString($oldNative) | ConvertFrom-Json}else{$null}
+    foreach($entry in @(@($nativeDll,'dll'),@($nativeManifest,'manifest'))) {
+        $bytes=Read-ManagedFile $entry[0]
+        if($null -ne $bytes -and (!$nativeRecord -or (Managed-Hash $bytes) -ne $nativeRecord.($entry[1]))){throw "Unmanaged or modified file: $($entry[0])"}
+    }
+    $ownedHash=if(Test-Path -LiteralPath $receipt -PathType Leaf){(Get-Content -LiteralPath $receipt -Raw).Trim()}else{''}
+    if($ownedHash -and $ownedHash -notmatch '^[A-F0-9]{64}$'){throw 'Invalid standalone receipt'}
+    $changes=[ordered]@{}
+    $packageMoves=@()
+    if(-not $Uninstall) {
+        $packageMoves=@(Get-LegacyMoves)
+        foreach($name in $packageMoves){$paths=Get-MovePaths $name;if(Test-Path -LiteralPath $paths[1]){throw 'Package destination collision'}}
+    }
+    if(-not $Uninstall) {
+        if((Get-FileHash -LiteralPath $exe).Hash -ne $expected){throw 'Unsupported executable'}
+        $source=Join-Path $PSScriptRoot 'dist/dinput8.dll'
+        if((Get-Item -LiteralPath $source).Length -gt 128MB){throw 'Source too large'}
+        $bytes=[IO.File]::ReadAllBytes($source)
+        Assert-LoaderBinary $bytes
+        Assert-LoaderBinary $bytes @('kiln_native_init')
+        if($kiln) {
+            $manifest=[Text.Encoding]::UTF8.GetBytes('{"format":1,"id":"enshrouded-modloader","version":"0.6.14","name":"Enshrouded ModLoader","side":"client","dlls":["modloader.dll"],"phase":"boot","init":"kiln_native_init","enabled":true,"kiln":">=0.2.0-dev","builds":["'+$expected+'"]}')
+            $changes[$nativeDll]=$bytes;$changes[$nativeManifest]=$manifest
+            $changes[$nativeReceipt]=[Text.Encoding]::UTF8.GetBytes((@{dll=(Managed-Hash $bytes);manifest=(Managed-Hash $manifest)} | ConvertTo-Json -Compress))
+        } else {
+            $current=Read-ManagedFile 'dinput8.dll'
+            if($null -ne $current -and (!$ownedHash -or (Managed-Hash $current) -ne $ownedHash)){throw 'Foreign root proxy; nothing replaced'}
+            $changes['dinput8.dll']=$bytes
+            $changes['RandomWorld/installed.sha256']=[Text.Encoding]::ASCII.GetBytes((Managed-Hash $bytes))
+        }
+    }
+    if($Uninstall -and !$kiln) {
+        $current=Read-ManagedFile 'dinput8.dll'
+        if($null -ne $current) {
+            if(!$ownedHash -or (Managed-Hash $current) -ne $ownedHash){throw 'Foreign root proxy; uninstall refused'}
+            $changes['dinput8.dll']=$null;$changes['RandomWorld/installed.sha256']=$null
+        }
+    }
+    if(-not $kiln -or $Uninstall) {
+        $changes[$nativeDll]=$null;$changes[$nativeManifest]=$null;$changes[$nativeReceipt]=$null
+    }
+    # The old standalone receipt identifies exactly our proxy moved by Kiln.
+    # Remove its chain entries and file together; never touch another loader.
+    $removePaths=@()
+    $chain=Join-Path $GamePath 'kiln/chain'
+    Assert-PlainPath $chain
+    if($ownedHash -and (Test-Path -LiteralPath $chain)) {
+        foreach($f in Get-ChildItem -LiteralPath $chain -File -Filter '*.dll') {
+            $relative='kiln/chain/'+$f.Name
+            if((Managed-Hash (Read-ManagedFile $relative)) -eq $ownedHash){$removePaths+=$relative;$changes[$relative]=$null}
+        }
+    }
+    if($kiln -and $ownedHash){$changes['RandomWorld/installed.sha256']=$null}
+    foreach($ini in @('kiln/chain.ini','dinput8-chain.ini')) {
+        $raw=Read-ManagedFile $ini
+        if($null -eq $raw -or !$removePaths.Count){continue}
+        $utf8=[Text.UTF8Encoding]::new($false,$true)
+        $text=$utf8.GetString($raw)
+        $base=if($ini -eq 'kiln/chain.ini'){Join-Path $GamePath 'kiln'}else{$GamePath}
+        $new=[regex]::Replace($text,'(?m)^[^\r\n]*(?:\r?\n|$)',{
+            param($match)
+            $line=$match.Value.Trim().Trim('"')
+            if($ini -eq 'dinput8-chain.ini' -and $line.Contains('=')){$line=$line.Substring($line.IndexOf('=')+1).Trim().Trim('"')}
+            if($line -and !$line.StartsWith('[') -and !$line.StartsWith(';') -and !$line.StartsWith('#')) {
+                $candidate=[IO.Path]::GetFullPath((Join-Path $base $line))
+                foreach($removed in $removePaths){if($candidate -ieq (Get-ManagedPath $removed)){return ''}}
+            }
+            return $match.Value
+        })
+        if($new -cne $text){$changes[$ini]=$utf8.GetBytes($new)}
+    }
+    if($Uninstall -and !$nativeRecord -and !$removePaths.Count){throw 'No recognized native installation'}
+    $entries=@()
+    foreach($key in $changes.Keys) {
+        $before=Read-ManagedFile $key;$after=$changes[$key]
+        if((Managed-Hash $before) -eq (Managed-Hash $after)){continue}
+        $entries+=@{path=$key;before=$(if($null -eq $before){$null}else{[Convert]::ToBase64String($before)});beforeHash=(Managed-Hash $before);afterHash=(Managed-Hash $after)}
+    }
+    if(!$entries.Count -and !$packageMoves.Count){Write-Output 'Managed files already up to date.';return}
+    $journal=Join-Path $data 'dual-install.pending.json'
+    Assert-PlainPath $journal
+    # Journal precedes every mutation and doubles as a permanent backup on success.
+    $json=@{format=1;files=$entries;packageMoves=$packageMoves} | ConvertTo-Json -Depth 5
+    $temp=$journal+'.new';[IO.File]::WriteAllText($temp,$json,[Text.UTF8Encoding]::new($true));[IO.File]::Move($temp,$journal)
+    try {
+        if($packageMoves.Count){New-Item -ItemType Directory -Path $packageRoot -Force | Out-Null}
+        foreach($name in $packageMoves){$paths=Get-MovePaths $name;Move-Item -LiteralPath $paths[0] -Destination $paths[1]}
+        foreach($entry in $entries){
+            if((Managed-Hash (Read-ManagedFile $entry.path)) -ne $entry.beforeHash){throw 'File changed before publication'}
+            Write-ManagedFile $entry.path $changes[$entry.path]
+        }
+        foreach($entry in $entries){if((Managed-Hash (Read-ManagedFile $entry.path)) -ne $entry.afterHash){throw 'Publication hash mismatch'}}
+        $backup=Join-Path $data ('dual-install.backup.'+[guid]::NewGuid().ToString('N')+'.json')
+        [IO.File]::Move($journal,$backup)
+    } catch { $failure=$_;Restore-DualInstall;throw $failure }
+    Write-Output ('ModLoader 0.6.14 '+$(if($Uninstall){'removed'}elseif($kiln){'installed for Kiln'}else{'installed standalone'})+'. Profiles and packages preserved.')
+}
+
 try {
+Restore-DualInstall
+$kiln=$false
+if(Test-Path -LiteralPath $dll -PathType Leaf) {
+    if((Get-Item -LiteralPath $dll).Length -le 128MB) {
+        try {Assert-LoaderBinary ([IO.File]::ReadAllBytes($dll)) @('KilnProxyInfo');$kiln=$true} catch {}
+    }
+}
+if($kiln -or (Test-Path -LiteralPath (Join-Path $data 'kiln-installed.json'))) {
+    if(Test-Path -LiteralPath $pending){throw 'Finish the interrupted standalone installation before changing loader mode.'}
+    Install-DualMode $kiln
+    return
+}
 Restore-PendingInstall
 if ($Uninstall) {
     if (-not (Test-Path -LiteralPath $receipt)) { throw 'No recognized installation receipt was found.' }
@@ -244,5 +421,5 @@ try {
         if (Test-Path -LiteralPath $tempFile -PathType Leaf) { Remove-Item -LiteralPath $tempFile -ErrorAction SilentlyContinue }
     }
 }
-Write-Host "ModLoader 0.6.12 installed and verified in $GamePath."
+Write-Host "ModLoader 0.6.14 installed and verified in $GamePath."
 } finally { $installLock.Dispose() }

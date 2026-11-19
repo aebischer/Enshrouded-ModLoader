@@ -1,0 +1,13 @@
+{
+  "format": 1,
+  "id": "enshrouded-modloader",
+  "version": "0.6.14",
+  "name": "Enshrouded ModLoader",
+  "side": "client",
+  "dlls": ["modloader.dll"],
+  "phase": "boot",
+  "init": "kiln_native_init",
+  "enabled": true,
+  "kiln": ">=0.2.0-dev",
+  "builds": ["5D9EF2F140B8ED49E30DBEE655841B89D08BAEC20F799A1817E171A18A850C77"]
+}

@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <functional>
 #include "MinHook.h"
+#include "loader_bootstrap.h"
 
 // Prototype for exactly the examined client. Never apply offsets to other builds.
 constexpr char ExpectedHash[] = "5D9EF2F140B8ED49E30DBEE655841B89D08BAEC20F799A1817E171A18A850C77";
@@ -411,7 +412,7 @@ static DWORD initializeImpl() {
         throw std::runtime_error("Cannot pin loader");
     folder=exe; folder.resize(folder.find_last_of(L"\\/"));
     folder+=L"\\ModLoader"; CreateDirectoryW(folder.c_str(),nullptr);
-    log("ModLoader 0.6.12: isolated package directory and localized failure dialogs");
+    log("ModLoader 0.6.14: automatic standalone / Kiln bootstrap");
     if(!matchingExe(exe)) throw std::runtime_error("Unsupported executable");
     imageBase=reinterpret_cast<uintptr_t>(GetModuleHandleW(nullptr));
     if(!unchangedHookTargets(exe)) throw std::runtime_error("Hook target modified in memory");
@@ -434,12 +435,42 @@ static DWORD initializeImpl() {
     log("MODS button active in world edit menu");
     return 0;
 }
-static DWORD WINAPI initialize(void*) noexcept {
-    try {return initializeImpl();}
+static loader_bootstrap::Start bootstrap;
+static HANDLE bootstrapLease=nullptr;
+static bool claimBootstrap() noexcept {
+    wchar_t name[96]{};
+    swprintf_s(name,L"Local\\EnshroudedModLoader.Bootstrap.%lu",GetCurrentProcessId());
+    const auto lease=CreateMutexW(nullptr,FALSE,name);
+    if(!lease)return false;
+    if(GetLastError()==ERROR_ALREADY_EXISTS){CloseHandle(lease);return false;}
+    bootstrapLease=lease; // Keep until process exit, including after a failed start.
+    return true;
+}
+static bool initializeCore() noexcept {
+    try {return initializeImpl()==0;}
     catch(const std::exception& e) {log(e.what());}
     catch(...) {log("Loader initialization failed");}
-    loaderErrorDialog("dialog.start.body","dialog.start.title",MB_OK|MB_ICONERROR|MB_SETFOREGROUND);
-    return 1;
+    return false;
+}
+static DWORD WINAPI initialize(void*) noexcept {
+    // A chained legacy proxy must stand aside before taking the process lease.
+    // Presence is deliberately enough: unknown Kiln ABI must not trigger a
+    // fallback which bypasses its profile/disabled-mod policy.
+    const auto proxy=GetModuleHandleW(L"dinput8.dll");
+    if(proxy&&GetProcAddress(proxy,"KilnProxyInfo"))return 0;
+    const auto status=bootstrap.run(claimBootstrap,initializeCore);
+    if(status!=KILN_NATIVE_INIT_OK)
+        loaderErrorDialog("dialog.start.body","dialog.start.title",MB_OK|MB_ICONERROR|MB_SETFOREGROUND);
+    return status;
+}
+extern "C" __declspec(dllexport) int KILN_CALL kiln_native_init(const KilnNativeContext* ctx) noexcept {
+    if(!loader_bootstrap::validContext(ctx))return KILN_NATIVE_INIT_UNSUPPORTED;
+    const auto status=bootstrap.run(claimBootstrap,initializeCore);
+    const char* message=status==KILN_NATIVE_INIT_OK?
+        "Enshrouded ModLoader started; world profiles and package paths unchanged":
+        "Enshrouded ModLoader failed or another copy already started; see ModLoader/mod-loader.log";
+    ctx->api->log(ctx->owner,status==KILN_NATIVE_INIT_OK?KILN_LOG_INFO:KILN_LOG_ERROR,{message,strlen(message)});
+    return status;
 }
 static HMODULE systemInput() {
     static HMODULE module=[] {
