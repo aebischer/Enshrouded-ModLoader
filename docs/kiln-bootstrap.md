@@ -72,10 +72,13 @@ checks for all eight loader hooks. CarryOn and Lantern retain their own checks.
 It does **not** silently accept previously modified targets, nor implement the
 future `kiln.hooks` / SDK hook adapter. A conflict is refused.
 
-Kiln is not installed in the local game at the time of this change. Simulated
-host tests are not a real Kiln client session; complete runtime compatibility
-is not yet certified. The MODS page, world start and both gameplay mods must
-still be exercised under real Kiln, then with any other hosted frameworks.
+Real-runtime validation: the public GitHub packages were installed with Kiln
+0.2.0-dev.29.19-beta.1 (core and client sigdb). Logs and loaded modules confirmed
+one loader initialization and one instance of each mod. The user confirmed
+CarryOn gameplay and, with Lantern 0.1.31-dev, light rendering and equipment
+persistence after reload. Standalone startup and installation remain supported.
+Other hosted frameworks, multiplayer, dedicated servers and future builds are
+not certified by this test. Use Lantern 0.1.31-dev or newer with this setup.
 
 Upstream contracts: [native mods](https://github.com/frostdev-ops/kiln/blob/main/docs/kiln/native-mods.md),
 [dual entry](https://github.com/frostdev-ops/kiln/blob/main/docs/kiln/modding/native-asi.md).

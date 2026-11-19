@@ -15,8 +15,11 @@ without Kiln it installs `dinput8.dll`; with Kiln it installs the **same binary*
 as `kiln/native/enshrouded-modloader/modloader.dll` plus a boot-phase manifest.
 Kiln's proxy is never replaced. Owned legacy chain copies are retired in the
 same recoverable transaction. Profiles, packages and SDK ABI are unchanged.
-See [setup and validation limits](docs/kiln-bootstrap.md). Full interoperability
-with other mods still requires real-runtime testing and hook coordination.
+See [installation, migration and validation](docs/kiln-bootstrap.md). Solo testing
+with Kiln 0.2.0-dev.29.19-beta.1 confirmed CarryOn 0.1.52-dev and Lantern
+0.1.31-dev, including lantern light and equipment persistence. Other hosted
+frameworks and multiplayer are not certified. Install Kiln first when using it,
+then run our installer; enable our native module in Kiln if your profile requires it.
 
 ## Install and use
 
@@ -31,7 +34,7 @@ The installer validates the x64 proxy and its exports, saves the previous
 version, and restores it if installation fails. **Uninstall.cmd** removes the
 managed proxy while preserving profiles, logs and installed mods.
 
-Open **Edit → MODS**, select a mod, enable it and adjust its settings. Changes
+Open **Edit â†’ MODS**, select a mod, enable it and adjust its settings. Changes
 apply when starting the world. Once DLLs have loaded, switching mods or worlds
 may require completely restarting the game. There is no hot unloading or
 automatic restart. No test mods are included in the player package.
@@ -54,7 +57,7 @@ in our catalogue or consuming its scan budget. A DLL needs an adjacent `.dll.mod
 manifest with the `ENSHROUDED_PACKAGE_V1` header to appear automatically;
 enabled missing/broken packages still report errors.
 
-Run the 0.6.12 installer before copying updated mod packages. It moves recognized
+Run the current installer before copying updated mod packages. It moves recognized
 legacy package folders into the dedicated directory, preserving relative IDs,
 resources and saved package data. It does not rewrite `ModLoader/worlds`.
 Mixed folders (our packages and foreign DLLs), linked paths and destination
@@ -108,8 +111,8 @@ game's permissions; this loader is not a sandbox.
 
 ## Interface languages
 
-All loader text added inside the game—navigation, states, settings, errors and
-launch refusals—covers the game's 15 interface languages: English, French,
+All loader text added inside the gameâ€”navigation, states, settings, errors and
+launch refusalsâ€”covers the game's 15 interface languages: English, French,
 German, Italian, Spanish, Russian, Polish, Japanese, Korean, Brazilian Portuguese,
 Thai, Turkish, Simplified Chinese, Traditional Chinese and Ukrainian.
 The selected game language controls the interface, including failure dialogs.

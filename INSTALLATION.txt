@@ -1,5 +1,5 @@
-ENSHROUDED MODLOADER 0.6.14 — WINDOWS X64
-Development build — no compiler required for the release ZIP
+ENSHROUDED MODLOADER 0.6.14 â€” WINDOWS X64
+Development build â€” no compiler required for the release ZIP
 
 1. Close Enshrouded and back up your saves.
 2. Extract the ENTIRE release ZIP into a folder. Keep Install.cmd, install.ps1
@@ -13,7 +13,7 @@ Development build — no compiler required for the release ZIP
 Custom directory, from PowerShell in the extracted folder:
 powershell -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -GamePath "D:\SteamLibrary\steamapps\common\Enshrouded"
 
-Installed layout:
+Shared layout (the root proxy belongs to ModLoader standalone, or to Kiln):
 Enshrouded/
   enshrouded.exe
   dinput8.dll
@@ -69,3 +69,11 @@ Kiln's disabled/no-mods policy is respected; our DLL does not bypass it.
 Uninstall.cmd removes our managed files, not Kiln, world settings or mod packages.
 If Kiln is removed, rerun Install.cmd to restore standalone startup.
 See docs/kiln-bootstrap.md for current runtime compatibility limits.
+
+TESTED KILN SETUP
+Install Kiln first, then run this Install.cmd. Copy CarryOn/Lantern only into
+Mods/EnshroudedModLoader, never into kiln/native or kiln/chain. Enable each mod
+in Edit world -> MODS. Kiln is optional; the same downloads work standalone.
+Solo validation: Kiln 0.2.0-dev.29.19-beta.1, ModLoader 0.6.14, CarryOn
+0.1.52-dev, Lantern 0.1.31-dev. Lantern light and equipped restoration were
+confirmed in game. Other frameworks and multiplayer remain uncertified.
